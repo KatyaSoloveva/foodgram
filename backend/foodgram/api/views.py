@@ -1,0 +1,27 @@
+import short_url
+from rest_framework.response import Response
+from rest_framework import viewsets
+from rest_framework.decorators import action
+
+from .serializers import IngredientSerializer, RecipeSerializer, TagSerializer
+from recipes.models import Ingredient, Recipe, Tag
+
+
+class RecipeViewSet(viewsets.ModelViewSet):
+    queryset = Recipe.objects.all()
+    serializer_class = RecipeSerializer
+
+    @action(methods=['get'], detail=True, url_path='get-link')
+    def getlink(self, request, pk=None):
+        recipe = Recipe.objects.get(pk=pk)
+        return Response({'short-link': short_url.encode_url(recipe.pk)})
+
+
+class TagViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+
+
+class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Ingredient.objects.all()
+    serializer_class = IngredientSerializer
