@@ -3,13 +3,19 @@ from rest_framework.response import Response
 from rest_framework import viewsets
 from rest_framework.decorators import action
 
-from .serializers import IngredientSerializer, RecipeSerializer, TagSerializer
+from .serializers import (IngredientSerializer, RecipeGETSerializer,
+                          RecipeSerializer, TagSerializer)
 from recipes.models import Ingredient, Recipe, Tag
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return RecipeGETSerializer
+        return RecipeSerializer
 
     @action(methods=['get'], detail=True, url_path='get-link')
     def getlink(self, request, pk=None):

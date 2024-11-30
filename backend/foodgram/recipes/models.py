@@ -1,8 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-# from django.utils.text import slugify
 
-# from unidecode import unidecode
 
 User = get_user_model()
 
@@ -19,11 +17,6 @@ class Tag(models.Model):
 
     def __str__(self):
         return self.name
-
-    # def save(self, *args, **kwargs):
-    #     if not self.slug:
-    #         self.slug = slugify(unidecode(self.name))
-    #     super().save(*args, **kwargs)
 
 
 class Ingredient(models.Model):
@@ -48,7 +41,8 @@ class Recipe(models.Model):
     name = models.CharField(max_length=255,
                             verbose_name='Название рецепта')
     text = models.TextField(verbose_name='Описание рецепта')
-    # image = 
+    image = models.ImageField(upload_to='recipes/images/%Y/%m/%d/',
+                              verbose_name='Картинка')
     cooking_time = models.PositiveSmallIntegerField(
         verbose_name='Время приготовления'
     )
@@ -72,4 +66,11 @@ class RecipeIngredient(models.Model):
     ingredient = models.ForeignKey(Ingredient, verbose_name='Ингредиент',
                                    on_delete=models.CASCADE,
                                    related_name='recipesingredients')
-    amount = models.SmallIntegerField(verbose_name='Kоличество')
+    amount = models.IntegerField(verbose_name='Kоличество')
+
+    class Meta:
+        verbose_name = 'Рецепт-Ингредиент'
+        verbose_name_plural = 'Рецептыы-Ингредиенты'
+
+    def __str__(self):
+        return f'{self.recipe} {self.ingredient}'

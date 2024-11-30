@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-nu1&1^eo5-odq#gv^f)%mwzgqwi=#57lh9m9jz53l1*_y)x3dn
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 
 # Application definition
@@ -39,7 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'recipes.apps.RecipesConfig',
     'api.apps.ApiConfig',
-    'rest_framework'
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
