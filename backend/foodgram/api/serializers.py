@@ -80,6 +80,25 @@ class RecipeSerializer(serializers.ModelSerializer):
             )
         return recipe
 
+    def update(self, instance, validated_data):
+        if 'recipesingredients' in validated_data:
+            ingredients_data = validated_data.pop('recipesingredients')
+            for current_ingredient in ingredients_data:
+                ingredient = Ingredient.objects.get(
+                    name=current_ingredient['ingredient']['id']
+                )
+                RecipeIngredient.objects.update(
+                    recipe=instance,
+                    ingredient=ingredient,
+                    amount=current_ingredient['amount']
+                )
+        if 'tags' in validated_data:
+            tags_data = validated_data.pop('tags')
+            instance.tags.set(tags_data)
+
+        instance.save()
+        return super().update(instance, validated_data)
+
 
 class RecipeGETSerializer(serializers.ModelSerializer):
     ingredients = ReadRecipeIngredientSerializer(source='recipesingredients',
