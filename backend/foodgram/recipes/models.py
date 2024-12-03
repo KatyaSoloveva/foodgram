@@ -41,7 +41,7 @@ class Recipe(models.Model):
     name = models.CharField(max_length=255,
                             verbose_name='Название рецепта')
     text = models.TextField(verbose_name='Описание рецепта')
-    image = models.ImageField(upload_to='recipes/images/%Y/%m/%d/',
+    image = models.ImageField(upload_to='recipes/images/',
                               verbose_name='Картинка')
     cooking_time = models.PositiveSmallIntegerField(
         verbose_name='Время приготовления'
@@ -50,10 +50,13 @@ class Recipe(models.Model):
     ingredients = models.ManyToManyField(Ingredient,
                                          through='RecipeIngredient',
                                          verbose_name='Ингредиенты')
+    pub_date = models.DateTimeField(auto_now_add=True,
+                                    verbose_name='Дата публикации')
 
     class Meta:
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
+        ordering = ('-pub_date',)
 
     def __str__(self):
         return self.name

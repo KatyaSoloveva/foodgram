@@ -3,7 +3,8 @@ import base64
 from django.core.files.base import ContentFile
 from rest_framework import serializers
 
-from recipes.models import Ingredient, Recipe, Tag, RecipeIngredient
+from recipes.models import (Ingredient, Recipe, Tag,
+                            RecipeIngredient)
 
 
 class Base64ImageField(serializers.ImageField):
@@ -110,3 +111,4 @@ class RecipeGETSerializer(serializers.ModelSerializer):
         model = Recipe
         fields = ('id', 'tags', 'author', 'ingredients', 'name',
                   'image', 'text', 'cooking_time')
+
