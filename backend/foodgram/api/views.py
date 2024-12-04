@@ -1,11 +1,13 @@
 import short_url
 from django.contrib.auth import get_user_model
 from rest_framework.response import Response
+from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from djoser.views import UserViewSet
 
-from .serializers import (IngredientSerializer, RecipeGETSerializer,
-                          RecipeSerializer, TagSerializer)
+from .serializers import (AvatarSerializer, IngredientSerializer,
+                          RecipeGETSerializer, RecipeSerializer, TagSerializer)
 from recipes.models import Ingredient, Recipe, Tag
 
 
@@ -35,3 +37,22 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
+
+
+class CustomUserViewSet(UserViewSet):
+
+    @action(methods=['put'], detail=False, url_path='me/avatar')
+    def put_avatar(self, request):
+        instance = request.user
+        serializer = AvatarSerializer(data=request.data, instance=instance,
+                                      context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+    @action(methods=['delete'], detail=False, url_path='me/avatar')
+    def delete_avatar(self, request):
+        instance = request.user
+        instance.avatar = None
+        instance.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)

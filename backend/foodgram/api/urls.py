@@ -2,7 +2,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from .views import (IngredientViewSet, RecipeViewSet,
-                    TagViewSet)
+                    TagViewSet, CustomUserViewSet)
 
 router = DefaultRouter()
 
@@ -13,5 +13,9 @@ router.register(r'ingredients', IngredientViewSet, basename='ingredients')
 urlpatterns = [
     path('', include(router.urls)),
     path('', include('djoser.urls')),
-    path(r'auth/', include('djoser.urls.authtoken'))
+    path('auth/', include('djoser.urls.authtoken')),
+    path('users/me/avatar/', CustomUserViewSet.as_view({
+        'put': 'put_avatar',
+        'delete': 'delete_avatar'
+    }))
 ]

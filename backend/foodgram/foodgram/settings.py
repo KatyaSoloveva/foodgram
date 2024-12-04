@@ -138,7 +138,7 @@ AUTH_USER_MODEL = 'users.CustomUser'
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated', 
+        'rest_framework.permissions.IsAuthenticated',
     ],
 
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -150,6 +150,7 @@ DJOSER = {
     "LOGIN_FIELD": 'email',
     "SERIALIZERS": {
         'user_create': 'api.serializers.UserPOSTSerializer',
-        'user': 'api.serializers.UserGETSerializer'
+        'user': 'api.serializers.UserGETSerializer',
+        'current_user': 'api.serializers.UserGETSerializer',
     }
 }

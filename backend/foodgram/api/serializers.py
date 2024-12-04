@@ -121,7 +121,8 @@ class RecipeGETSerializer(serializers.ModelSerializer):
 class UserPOSTSerializer(UserCreateSerializer):
     class Meta:
         model = User
-        fields = ('email', 'username', 'first_name', 'last_name', 'password')
+        fields = ('email', 'id', 'username', 'first_name', 'last_name',
+                  'password')
 
 
 class UserGETSerializer(UserSerializer):
@@ -129,3 +130,11 @@ class UserGETSerializer(UserSerializer):
         model = User
         fields = ('email', 'id', 'username', 'first_name', 'last_name',
                   'is_subscribed', 'avatar')
+
+
+class AvatarSerializer(serializers.ModelSerializer):
+    avatar = Base64ImageField(required=True)
+
+    class Meta:
+        model = User
+        fields = ('avatar',)
