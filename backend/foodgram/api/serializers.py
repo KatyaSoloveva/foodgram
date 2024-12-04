@@ -8,7 +8,6 @@ from djoser.serializers import UserCreateSerializer, UserSerializer
 from recipes.models import (Ingredient, Recipe, Tag,
                             RecipeIngredient)
 
-
 User = get_user_model()
 
 
@@ -31,6 +30,30 @@ class IngredientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ingredient
         fields = '__all__'
+
+
+class UserPOSTSerializer(UserCreateSerializer):
+    class Meta:
+        model = User
+        fields = ('email', 'id', 'username', 'first_name', 'last_name',
+                  'password')
+
+
+class UserGETSerializer(UserSerializer):
+    avatar = Base64ImageField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = ('email', 'id', 'username', 'first_name', 'last_name',
+                  'is_subscribed', 'avatar')
+
+
+class AvatarSerializer(serializers.ModelSerializer):
+    avatar = Base64ImageField(required=True)
+
+    class Meta:
+        model = User
+        fields = ('avatar',)
 
 
 class ReadRecipeIngredientSerializer(serializers.ModelSerializer):
@@ -107,6 +130,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 
 class RecipeGETSerializer(serializers.ModelSerializer):
+    author = UserGETSerializer()
     ingredients = ReadRecipeIngredientSerializer(source='recipesingredients',
                                                  many=True, read_only=True)
     tags = TagSerializer(many=True, read_only=True)
@@ -116,25 +140,3 @@ class RecipeGETSerializer(serializers.ModelSerializer):
         model = Recipe
         fields = ('id', 'tags', 'author', 'ingredients', 'name',
                   'image', 'text', 'cooking_time')
-
-
-class UserPOSTSerializer(UserCreateSerializer):
-    class Meta:
-        model = User
-        fields = ('email', 'id', 'username', 'first_name', 'last_name',
-                  'password')
-
-
-class UserGETSerializer(UserSerializer):
-    class Meta:
-        model = User
-        fields = ('email', 'id', 'username', 'first_name', 'last_name',
-                  'is_subscribed', 'avatar')
-
-
-class AvatarSerializer(serializers.ModelSerializer):
-    avatar = Base64ImageField(required=True)
-
-    class Meta:
-        model = User
-        fields = ('avatar',)

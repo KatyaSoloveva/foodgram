@@ -90,3 +90,20 @@ class Favorite(models.Model):
     class Meta:
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранное'
+
+
+class Follow(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE,
+                             verbose_name='Пользователь',
+                             related_name='subscriber')
+    following = models.ForeignKey(User, on_delete=models.CASCADE,
+                                  verbose_name='Подписка',
+                                  related_name='subscription')
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'following'],
+                name='unique_user_following'
+            )
+        ]
