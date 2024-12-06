@@ -5,7 +5,7 @@ from django.core.files.base import ContentFile
 from rest_framework import serializers
 from djoser.serializers import UserCreateSerializer, UserSerializer
 
-from recipes.models import (Ingredient, Recipe, Tag,
+from recipes.models import (Ingredient, Follow, Recipe, Tag,
                             RecipeIngredient)
 
 User = get_user_model()
@@ -45,7 +45,7 @@ class UserGETSerializer(UserSerializer):
     class Meta:
         model = User
         fields = ('email', 'id', 'username', 'first_name', 'last_name',
-                  'is_subscribed', 'avatar')
+                  'avatar')
 
 
 class AvatarSerializer(serializers.ModelSerializer):
@@ -140,3 +140,45 @@ class RecipeGETSerializer(serializers.ModelSerializer):
         model = Recipe
         fields = ('id', 'tags', 'author', 'ingredients', 'name',
                   'image', 'text', 'cooking_time')
+
+
+class PartialRecipeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time')
+
+
+class FollowSerializer(serializers.ModelSerializer):
+    email = serializers.ReadOnlyField(source='following.email')
+    id = serializers.ReadOnlyField(source='following.id')
+    username = serializers.ReadOnlyField(source='following.username')
+    first_name = serializers.ReadOnlyField(source='following.first_name')
+    last_name = serializers.ReadOnlyField(source='following.last_name')
+    avatar = Base64ImageField(source='following.avatar',
+                              read_only=True)
+    recipes = PartialRecipeSerializer(many=True, read_only=True,
+                                      source='following.recipes')
+    is_subscribed = serializers.SerializerMethodField(read_only=True)
+    recipes_count = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Follow
+        fields = ('email', 'id', 'username', 'first_name', 'last_name',
+                  'is_subscribed', 'recipes', 'recipes_count', 'avatar')
+
+    def get_is_subscribed(self, obj):
+        return True
+
+    def get_recipes_count(self, obj):
+        return obj.following.recipes.count()
+
+    def validate(self, data):
+        user = self.context['request'].user
+        following = self.context['following']
+        if user == following:
+            raise serializers.ValidationError(
+                'Нельзя оформить подписку на самого себя!')
+        if Follow.objects.filter(user=user, following=following).exists():
+            raise serializers.ValidationError(
+                'Вы уже подписаны на данного пользователя!')
+        return data

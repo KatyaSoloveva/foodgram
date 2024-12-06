@@ -1,5 +1,6 @@
 import short_url
 from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import viewsets
@@ -7,8 +8,9 @@ from rest_framework.decorators import action
 from djoser.views import UserViewSet
 
 from .serializers import (AvatarSerializer, IngredientSerializer,
-                          RecipeGETSerializer, RecipeSerializer, TagSerializer)
-from recipes.models import Ingredient, Recipe, Tag
+                          FollowSerializer, RecipeGETSerializer,
+                          RecipeSerializer, TagSerializer)
+from recipes.models import Ingredient, Follow, Recipe, Tag
 
 
 User = get_user_model()
@@ -56,3 +58,33 @@ class CustomUserViewSet(UserViewSet):
         instance.avatar = None
         instance.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(methods=['post', 'delete'], detail=True)
+    def subscribe(self, request, *args, **kwargs):
+        user = request.user
+        following = get_object_or_404(User, id=self.kwargs['id'])
+        if request.method == 'POST':
+            serializer = FollowSerializer(
+                data=request.data,
+                context={'request': request, 'following': following}
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save(user=user, following=following)
+            return Response(serializer.data)
+        else:
+            if Follow.objects.filter(user=user, following=following).exists():
+                Follow.objects.get(user=user).delete()
+                return Response('Успешная отписка',
+                                status=status.HTTP_204_NO_CONTENT)
+            return Response('Ошибка отписки',
+                            status=status.HTTP_404_NOT_FOUND)
+
+    @action(methods=['get'], detail=False)
+    def subscriptions(self, request):
+        user = request.user
+        followings = Follow.objects.filter(user=user)
+        count = followings.count()
+        serializer = FollowSerializer(followings,
+                                      context={'request': request}, many=True)
+        print(serializer.data)
+        return Response({'count': count, 'results': serializer.data})

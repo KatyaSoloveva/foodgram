@@ -18,8 +18,6 @@ class CustomUser(AbstractUser):
                                  verbose_name='Фамилия')
     email = models.EmailField(max_length=254,
                               verbose_name='Email')
-    is_subscribed = models.BooleanField(blank=True, default=False,
-                                        verbose_name='Подписан на автора')
     avatar = models.ImageField(upload_to='users/', blank=True,
                                verbose_name='Аватар')
     role = models.CharField(max_length=50, choices=USER_CHOICES, default=USER)
