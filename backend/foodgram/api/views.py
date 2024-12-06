@@ -10,8 +10,9 @@ from djoser.views import UserViewSet
 from .serializers import (AvatarSerializer, IngredientSerializer,
                           FavoriteSerializer, FollowSerializer,
                           RecipeGETSerializer, RecipeSerializer,
-                          TagSerializer)
-from recipes.models import Ingredient, Favorite, Follow, Recipe, Tag
+                          ShoppingCartSerializer, TagSerializer)
+from recipes.models import (Ingredient, Favorite, Follow, Recipe,
+                            ShoppingCart, Tag)
 
 
 User = get_user_model()
@@ -44,6 +45,25 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 return Response('Рецепт успешно удален из избранного',
                                 status=status.HTTP_204_NO_CONTENT)
             return Response('Ошибка удаления из избранного',
+                            status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['post', 'delete'], detail=True)
+    def shopping_cart(self, request, *args, **kwargs):
+        user = request.user
+        recipe = get_object_or_404(Recipe, pk=self.kwargs['pk'])
+        if request.method == 'POST':
+            serializer = ShoppingCartSerializer(
+                data=request.data,
+                context={'request': request, 'recipe': recipe})
+            serializer.is_valid(raise_exception=True)
+            serializer.save(user=user, recipe=recipe)
+            return Response(serializer.data)
+        else:
+            if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
+                ShoppingCart.objects.get(user=user).delete()
+                return Response('Рецепт успешно удален из списка покупок',
+                                status=status.HTTP_204_NO_CONTENT)
+            return Response('Ошибка удаления из списка покупок',
                             status=status.HTTP_400_BAD_REQUEST)
 
     @action(methods=['get'], detail=True, url_path='get-link')
