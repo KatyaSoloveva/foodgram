@@ -8,9 +8,10 @@ from rest_framework.decorators import action
 from djoser.views import UserViewSet
 
 from .serializers import (AvatarSerializer, IngredientSerializer,
-                          FollowSerializer, RecipeGETSerializer,
-                          RecipeSerializer, TagSerializer)
-from recipes.models import Ingredient, Follow, Recipe, Tag
+                          FavoriteSerializer, FollowSerializer,
+                          RecipeGETSerializer, RecipeSerializer,
+                          TagSerializer)
+from recipes.models import Ingredient, Favorite, Follow, Recipe, Tag
 
 
 User = get_user_model()
@@ -24,6 +25,26 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if self.request.method == 'GET':
             return RecipeGETSerializer
         return RecipeSerializer
+
+    @action(methods=['post', 'delete'], detail=True)
+    def favorite(self, request, *args, **kwargs):
+        recipe = get_object_or_404(Recipe, pk=self.kwargs['pk'])
+        author = recipe.author
+        if request.method == 'POST':
+            serializer = FavoriteSerializer(
+                data=request.data,
+                context={'request': request, 'recipe': recipe}
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save(author=author, recipe=recipe)
+            return Response(serializer.data)
+        else:
+            if Favorite.objects.filter(author=author, recipe=recipe).exists():
+                Favorite.objects.get(author=author).delete()
+                return Response('Рецепт успешно удален из избранного',
+                                status=status.HTTP_204_NO_CONTENT)
+            return Response('Ошибка удаления из избранного',
+                            status=status.HTTP_400_BAD_REQUEST)
 
     @action(methods=['get'], detail=True, url_path='get-link')
     def getlink(self, request, pk=None):
@@ -77,7 +98,7 @@ class CustomUserViewSet(UserViewSet):
                 return Response('Успешная отписка',
                                 status=status.HTTP_204_NO_CONTENT)
             return Response('Ошибка отписки',
-                            status=status.HTTP_404_NOT_FOUND)
+                            status=status.HTTP_400_BAD_REQUEST)
 
     @action(methods=['get'], detail=False)
     def subscriptions(self, request):
