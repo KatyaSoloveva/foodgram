@@ -9,7 +9,7 @@ from djoser.views import UserViewSet
 
 from .serializers import (AvatarSerializer, IngredientSerializer,
                           FavoriteSerializer, FollowSerializer,
-                          RecipeGETSerializer, RecipeSerializer,
+                          RecipeSerializer, RecipeGETSerializer,
                           ShoppingCartSerializer, TagSerializer)
 from recipes.models import (Ingredient, Favorite, Follow, Recipe,
                             ShoppingCart, Tag)
@@ -23,7 +23,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     serializer_class = RecipeSerializer
 
     def get_serializer_class(self):
-        if self.request.method == 'GET':
+        if self.action in ('list', 'retrieve'):
             return RecipeGETSerializer
         return RecipeSerializer
 
