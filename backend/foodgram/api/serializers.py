@@ -47,14 +47,27 @@ class UserPOSTSerializer(UserCreateSerializer):
             )
         return value
 
+    def validate_email(self, value):
+        if User.objects.filter(email=value):
+            raise serializers.ValidationError(
+                'Пользователь с таким emil уже существует'
+            )
+        return value
+
 
 class UserGETSerializer(UserSerializer):
     avatar = Base64ImageField(read_only=True)
+    is_subscribed = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = User
         fields = ('email', 'id', 'username', 'first_name', 'last_name',
-                  'avatar')
+                  'is_subscribed', 'avatar')
+
+    def get_is_subscribed(self, obj):
+        return Follow.objects.filter(
+            following=obj, user=self.context['request'].user
+        ).exists()
 
 
 class AvatarSerializer(serializers.ModelSerializer):
