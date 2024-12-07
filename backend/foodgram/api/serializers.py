@@ -101,6 +101,13 @@ class WriteRecipeIngredientSerializer(serializers.ModelSerializer):
         model = RecipeIngredient
         fields = ('id', 'amount')
 
+    def validate_amount(self, value):
+        if value < 1:
+            raise serializers.ValidationError(
+                'Количество не должно быть меньше 1!'
+            )
+        return value
+
 
 class RecipeGETSerializer(serializers.ModelSerializer):
     author = UserGETSerializer(read_only=True)
@@ -143,7 +150,15 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         ingredients_data = validated_data.pop('recipesingredients')
+        if not ingredients_data:
+            raise serializers.ValidationError(
+                'Нельзя создать рецепт без ингредиентов!'
+            )
         tags_data = validated_data.pop('tags')
+        if not tags_data:
+            raise serializers.ValidationError(
+                'Нельзя создать рецепт без тегов!'
+            )
         recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags_data)
         for current_ingredient in ingredients_data:
@@ -179,6 +194,13 @@ class RecipeSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         serializer = RecipeGETSerializer(instance, context=self.context)
         return serializer.data
+
+    def validate_cooking_time(self, value):
+        if value < 1:
+            raise serializers.ValidationError(
+                'Время готовки не должно быть меньше 1!'
+            )
+        return value
 
 
 class PartialRecipeSerializer(serializers.ModelSerializer):
