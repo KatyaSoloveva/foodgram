@@ -202,6 +202,26 @@ class RecipeSerializer(serializers.ModelSerializer):
             )
         return value
 
+    def validate_ingredients(self, value):
+        ingredients = []
+        for current_ingredient in value:
+            ingredients.append(current_ingredient['ingredient']['id'])
+        if len(ingredients) != len(set(ingredients)):
+            raise serializers.ValidationError(
+                'Нельзя добавлять одинаковые ингредиенты!'
+            )
+        return value
+
+    def validate_tags(self, value):
+        tags = []
+        for current_tag in value:
+            tags.append(current_tag)
+        if len(tags) != len(set(tags)):
+            raise serializers.ValidationError(
+                'Нельзя добавлять одинаковые теги!'
+            )
+        return value
+
 
 class PartialRecipeSerializer(serializers.ModelSerializer):
     class Meta:
