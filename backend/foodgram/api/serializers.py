@@ -42,7 +42,7 @@ class UserPOSTSerializer(UserCreateSerializer):
     def validate_username(self, value):
         pattern = re.compile(r'^[\w.@+-]+Z')
         if not pattern.match(value):
-            return serializers.ValidationError(
+            raise serializers.ValidationError(
                 'Поле username не соответствует шаблону'
             )
         return value
