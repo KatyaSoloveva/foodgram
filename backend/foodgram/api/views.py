@@ -30,7 +30,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(methods=['post', 'delete'], detail=True)
     def favorite(self, request, *args, **kwargs):
         recipe = get_object_or_404(Recipe, pk=self.kwargs['pk'])
-        author = recipe.author
+        author = request.user
         if request.method == 'POST':
             serializer = FavoriteSerializer(
                 data=request.data,
@@ -41,7 +41,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             if Favorite.objects.filter(author=author, recipe=recipe).exists():
-                Favorite.objects.get(author=author).delete()
+                Favorite.objects.get(author=author, recipe=recipe).delete()
                 return Response('Рецепт успешно удален из избранного',
                                 status=status.HTTP_204_NO_CONTENT)
             return Response('Ошибка удаления из избранного',
@@ -60,7 +60,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
-                ShoppingCart.objects.get(user=user).delete()
+                ShoppingCart.objects.get(user=user, recipe=recipe).delete()
                 return Response('Рецепт успешно удален из списка покупок',
                                 status=status.HTTP_204_NO_CONTENT)
             return Response('Ошибка удаления из списка покупок',
@@ -112,7 +112,7 @@ class CustomUserViewSet(UserViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             if Follow.objects.filter(user=user, following=following).exists():
-                Follow.objects.get(user=user).delete()
+                Follow.objects.get(user=user, following=following).delete()
                 return Response('Успешная отписка',
                                 status=status.HTTP_204_NO_CONTENT)
             return Response('Ошибка отписки',
