@@ -40,10 +40,10 @@ class UserPOSTSerializer(UserCreateSerializer):
                   'password')
 
     def validate_username(self, value):
-        pattern = re.compile(r'^[\w.@+-]+Z')
+        pattern = re.compile(r'^[\w.@+-]+$')
         if not pattern.match(value):
             raise serializers.ValidationError(
-                'Поле username не соответствует шаблону'
+                'Поле username содержит недопустимые символы'
             )
         return value
 
