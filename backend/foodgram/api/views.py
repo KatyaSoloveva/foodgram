@@ -38,7 +38,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             )
             serializer.is_valid(raise_exception=True)
             serializer.save(author=author, recipe=recipe)
-            return Response(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             if Favorite.objects.filter(author=author, recipe=recipe).exists():
                 Favorite.objects.get(author=author).delete()
@@ -57,7 +57,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 context={'request': request, 'recipe': recipe})
             serializer.is_valid(raise_exception=True)
             serializer.save(user=user, recipe=recipe)
-            return Response(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
                 ShoppingCart.objects.get(user=user).delete()
