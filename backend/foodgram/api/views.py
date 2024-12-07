@@ -84,21 +84,19 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 class CustomUserViewSet(UserViewSet):
 
-    @action(methods=['put'], detail=False, url_path='me/avatar')
-    def put_avatar(self, request):
+    @action(methods=['put', 'delete'], detail=False, url_path='me/avatar')
+    def avatar(self, request):
         instance = request.user
-        serializer = AvatarSerializer(data=request.data, instance=instance,
-                                      context={'request': request})
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data)
-
-    @action(methods=['delete'], detail=False, url_path='me/avatar')
-    def delete_avatar(self, request):
-        instance = request.user
-        instance.avatar = None
-        instance.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        if request.method == 'PUT':
+            serializer = AvatarSerializer(data=request.data, instance=instance,
+                                          context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
+        else:
+            instance.avatar = None
+            instance.save()
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(methods=['post', 'delete'], detail=True)
     def subscribe(self, request, *args, **kwargs):
