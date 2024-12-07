@@ -1,4 +1,5 @@
 import base64
+import re
 
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
@@ -37,6 +38,14 @@ class UserPOSTSerializer(UserCreateSerializer):
         model = User
         fields = ('email', 'id', 'username', 'first_name', 'last_name',
                   'password')
+
+    def validate_username(self, value):
+        pattern = re.compile(r'^[\w.@+-]+Z')
+        if not pattern.match(value):
+            return serializers.ValidationError(
+                'Поле username не соответствует шаблону'
+            )
+        return value
 
 
 class UserGETSerializer(UserSerializer):
