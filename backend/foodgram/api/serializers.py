@@ -150,15 +150,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         ingredients_data = validated_data.pop('recipesingredients')
-        if not ingredients_data:
-            raise serializers.ValidationError(
-                'Нельзя создать рецепт без ингредиентов!'
-            )
         tags_data = validated_data.pop('tags')
-        if not tags_data:
-            raise serializers.ValidationError(
-                'Нельзя создать рецепт без тегов!'
-            )
         recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags_data)
         for current_ingredient in ingredients_data:
@@ -173,20 +165,26 @@ class RecipeSerializer(serializers.ModelSerializer):
         return recipe
 
     def update(self, instance, validated_data):
-        if 'recipesingredients' in validated_data:
-            ingredients_data = validated_data.pop('recipesingredients')
-            for current_ingredient in ingredients_data:
-                ingredient = Ingredient.objects.get(
-                    name=current_ingredient['ingredient']['id']
-                )
-                RecipeIngredient.objects.update(
-                    recipe=instance,
-                    ingredient=ingredient,
-                    amount=current_ingredient['amount']
-                )
-        if 'tags' in validated_data:
-            tags_data = validated_data.pop('tags')
-            instance.tags.set(tags_data)
+        if 'recipesingredients' not in validated_data:
+            raise serializers.ValidationError(
+                'Нельзя обновить рецепт без поля ingredients!'
+            )
+        ingredients_data = validated_data.pop('recipesingredients')
+        for current_ingredient in ingredients_data:
+            ingredient = Ingredient.objects.get(
+                name=current_ingredient['ingredient']['id']
+            )
+            RecipeIngredient.objects.update(
+                recipe=instance,
+                ingredient=ingredient,
+                amount=current_ingredient['amount']
+            )
+        if 'tags' not in validated_data:
+            raise serializers.ValidationError(
+                'Нельзя обновить рецепт без поля tags!'
+            )
+        tags_data = validated_data.pop('tags')
+        instance.tags.set(tags_data)
 
         instance.save()
         return super().update(instance, validated_data)
@@ -203,6 +201,10 @@ class RecipeSerializer(serializers.ModelSerializer):
         return value
 
     def validate_ingredients(self, value):
+        if not value:
+            raise serializers.ValidationError(
+                'Нельзя создать рецепт без ингредиентов!'
+            )
         ingredients = []
         for current_ingredient in value:
             ingredients.append(current_ingredient['ingredient']['id'])
@@ -213,6 +215,10 @@ class RecipeSerializer(serializers.ModelSerializer):
         return value
 
     def validate_tags(self, value):
+        if not value:
+            raise serializers.ValidationError(
+                'Нельзя создать рецепт без тегов!'
+            )
         tags = []
         for current_tag in value:
             tags.append(current_tag)
