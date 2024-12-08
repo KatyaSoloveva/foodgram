@@ -15,6 +15,7 @@ from .serializers import (AvatarSerializer, IngredientSerializer,
 from recipes.models import (Ingredient, Favorite, Follow, Recipe,
                             ShoppingCart, Tag)
 from .permissions import IsAdminIsAuthorOrReadOnly
+from .pagination import UserRecipePagination
 
 User = get_user_model()
 
@@ -23,6 +24,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     permission_classes = (IsAdminIsAuthorOrReadOnly,)
+    pagination_class = UserRecipePagination
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
@@ -87,6 +89,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class CustomUserViewSet(UserViewSet):
+    pagination_class = UserRecipePagination
 
     @action(methods=['get'], detail=False, url_path='me',
             permission_classes=(permissions.IsAuthenticated,))
@@ -131,8 +134,7 @@ class CustomUserViewSet(UserViewSet):
     def subscriptions(self, request):
         user = request.user
         followings = Follow.objects.filter(user=user)
-        count = followings.count()
-        serializer = FollowSerializer(followings,
+        page = self.paginate_queryset(followings)
+        serializer = FollowSerializer(page,
                                       context={'request': request}, many=True)
-        print(serializer.data)
-        return Response({'count': count, 'results': serializer.data})
+        return self.get_paginated_response(serializer.data)
