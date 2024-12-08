@@ -88,6 +88,11 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 class CustomUserViewSet(UserViewSet):
 
+    @action(methods=['get'], detail=False, url_path='me',
+            permission_classes=(permissions.IsAuthenticated,))
+    def me(self, request, *args, **kwargs):
+        return super().me(request, *args, **kwargs)
+
     @action(methods=['put', 'delete'], detail=False, url_path='me/avatar')
     def avatar(self, request):
         instance = request.user
