@@ -14,6 +14,7 @@ from .serializers import (AvatarSerializer, IngredientSerializer,
                           ShoppingCartSerializer, TagSerializer)
 from recipes.models import (Ingredient, Favorite, Follow, Recipe,
                             ShoppingCart, Tag)
+from .permissions import IsAdminIsAuthorOrReadOnly
 
 
 User = get_user_model()
@@ -22,6 +23,7 @@ User = get_user_model()
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
+    permission_classes = (IsAdminIsAuthorOrReadOnly,)
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
