@@ -16,7 +16,6 @@ from recipes.models import (Ingredient, Favorite, Follow, Recipe,
                             ShoppingCart, Tag)
 from .permissions import IsAdminIsAuthorOrReadOnly
 
-
 User = get_user_model()
 
 
@@ -113,11 +112,11 @@ class CustomUserViewSet(UserViewSet):
                 context={'request': request, 'following': following}
             )
             serializer.is_valid(raise_exception=True)
-            serializer.save(user=user, following=following)
+            serializer.save(following=following, user=user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
-            if Follow.objects.filter(user=user, following=following).exists():
-                Follow.objects.get(user=user, following=following).delete()
+            if Follow.objects.filter(following=following, user=user).exists():
+                Follow.objects.get(following=following, user=user).delete()
                 return Response('Успешная отписка',
                                 status=status.HTTP_204_NO_CONTENT)
             return Response('Ошибка отписки',

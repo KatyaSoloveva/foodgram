@@ -65,9 +65,11 @@ class UserGETSerializer(UserSerializer):
                   'is_subscribed', 'avatar')
 
     def get_is_subscribed(self, obj):
-        return Follow.objects.filter(
-            following=obj, user=self.context['request'].user
-        ).exists()
+        user = self.context['request'].user
+        if not user.is_anonymous:
+            return Follow.objects.filter(
+                following=obj, user=user
+            ).exists()
 
 
 class AvatarSerializer(serializers.ModelSerializer):

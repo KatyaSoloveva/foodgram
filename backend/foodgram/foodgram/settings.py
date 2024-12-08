@@ -152,5 +152,9 @@ DJOSER = {
         'user_create': 'api.serializers.UserPOSTSerializer',
         'user': 'api.serializers.UserGETSerializer',
         'current_user': 'api.serializers.UserGETSerializer',
+    },
+    "PERMISSIONS": {
+        'user': ['api.permissions.IsAdminIsAuthorOrReadOnly'],
+        'user_list': ['rest_framework.permissions.AllowAny'],
     }
 }
