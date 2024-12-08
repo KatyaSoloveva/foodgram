@@ -70,6 +70,7 @@ class UserGETSerializer(UserSerializer):
             return Follow.objects.filter(
                 following=obj, user=user
             ).exists()
+        return False
 
 
 class AvatarSerializer(serializers.ModelSerializer):
