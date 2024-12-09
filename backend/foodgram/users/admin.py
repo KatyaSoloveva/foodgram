@@ -5,8 +5,9 @@ from django.contrib.auth.admin import UserAdmin
 
 User = get_user_model()
 
-UserAdmin.fieldsets += (
-    ('Extra Fields', {'fields': ('avatar',)}),
-)
 
-admin.site.register(User, UserAdmin)
+@admin.register(User)
+class UserAdmin(UserAdmin):
+    list_display = ('username', 'first_name', 'last_name', 'email', 'is_staff')
+    search_fields = ('username', 'email')
+    list_filter = ('is_staff',)

@@ -3,9 +3,54 @@ from django.contrib import admin
 from .models import Ingredient, Favorite, Follow, Recipe, ShoppingCart, Tag
 
 
-admin.site.register(Ingredient)
-admin.site.register(Follow)
-admin.site.register(Favorite)
-admin.site.register(Recipe)
-admin.site.register(Tag)
-admin.site.register(ShoppingCart)
+@admin.register(Ingredient)
+class IngredientAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'measurement_unit',)
+    search_fields = ('name',)
+    list_filter = ('name',)
+    list_display_links = ('id', 'name')
+
+
+@admin.register(Favorite)
+class FavoriteAdmin(admin.ModelAdmin):
+    list_display = ('id', 'author', 'recipe')
+    search_fields = ('author', 'recipe')
+    list_filter = ('author',)
+    list_display_links = ('id', 'author')
+
+
+@admin.register(Follow)
+class FollowAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'following')
+    search_fields = ('user', 'following')
+    list_filter = ('user', 'following')
+    list_display_links = ('id', 'user')
+
+
+@admin.register(Recipe)
+class RecipeAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'author')
+    search_fields = ('name', 'author')
+    list_filter = ('tags',)
+    list_display_links = ('id', 'name',)
+    readonly_fields = ('favorite',)
+
+    @admin.display(description='Число добавлений рецепта в избранное')
+    def favorite(self, obj):
+        return obj.favorites.count()
+
+
+@admin.register(ShoppingCart)
+class ShoppingCartAdmin(admin.ModelAdmin):
+    list_display = ('id', 'recipe', 'user')
+    search_fields = ('recipe', 'user')
+    list_filter = ('user',)
+    list_display_links = ('id', 'recipe',)
+
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'slug')
+    search_fields = ('name',)
+    list_filter = ('name',)
+    list_display_links = ('id', 'name')
