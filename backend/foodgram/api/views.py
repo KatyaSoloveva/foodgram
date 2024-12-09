@@ -6,6 +6,7 @@ from rest_framework import status
 from rest_framework import viewsets
 from rest_framework import permissions
 from rest_framework.decorators import action
+from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
 
 from .serializers import (AvatarSerializer, IngredientSerializer,
@@ -16,6 +17,7 @@ from recipes.models import (Ingredient, Favorite, Follow, Recipe,
                             ShoppingCart, Tag)
 from .permissions import IsAdminIsAuthorOrReadOnly
 from .pagination import UserRecipePagination
+from .filters import IngredientSearchFilter
 
 User = get_user_model()
 
@@ -25,6 +27,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     serializer_class = RecipeSerializer
     permission_classes = (IsAdminIsAuthorOrReadOnly,)
     pagination_class = UserRecipePagination
+    filter_backends = (DjangoFilterBackend,)
+    filterset_fields = ('author', 'tags__slug')
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
@@ -86,6 +90,8 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = (permissions.AllowAny,)
+    filter_backends = (IngredientSearchFilter,)
+    search_fields = ('^name',)
 
 
 class CustomUserViewSet(UserViewSet):
