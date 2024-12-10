@@ -33,11 +33,15 @@ class RecipeAdmin(admin.ModelAdmin):
     search_fields = ('name', 'author')
     list_filter = ('tags',)
     list_display_links = ('id', 'name',)
-    readonly_fields = ('favorite',)
+    readonly_fields = ('favorite', 'ingredients')
 
     @admin.display(description='Число добавлений рецепта в избранное')
     def favorite(self, obj):
         return obj.favorites.count()
+
+    @admin.display(description='Ингредиенты')
+    def ingredients(self, obj):
+        return obj.recipeingredients
 
 
 @admin.register(ShoppingCart)

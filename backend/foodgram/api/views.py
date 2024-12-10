@@ -1,4 +1,6 @@
 import short_url
+import csv
+from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
@@ -11,9 +13,11 @@ from djoser.views import UserViewSet
 
 from .serializers import (AvatarSerializer, IngredientSerializer,
                           FavoriteSerializer, FollowSerializer,
-                          RecipeSerializer, RecipeGETSerializer,
-                          ShoppingCartSerializer, TagSerializer)
-from recipes.models import (Ingredient, Favorite, Follow, Recipe,
+                          RecipeSerializer, ReadRecipeIngredientSerializer,
+                          RecipeGETSerializer, ShoppingCartSerializer,
+                          TagSerializer)
+from recipes.models import (Ingredient, Favorite, Follow,
+                            Recipe, RecipeIngredient,
                             ShoppingCart, Tag)
 from .permissions import IsAdminIsAuthorOrReadOnly
 from .pagination import UserRecipePagination
@@ -74,6 +78,38 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return Response('Ошибка удаления из списка покупок',
                             status=status.HTTP_400_BAD_REQUEST)
 
+    @action(methods=['get'], detail=False,
+            permission_classes=(permissions.IsAuthenticated,))
+    def download_shopping_cart(self, request):
+        user = request.user
+        ingredients = RecipeIngredient.objects.filter(
+            recipe__shoppingcarts__user=user
+        )
+        serializer = ReadRecipeIngredientSerializer(
+            ingredients,
+            context={'request': request},
+            many=True
+        )
+        dictionary = {}
+        for data in serializer.data:
+            if data['name'] not in dictionary:
+                dictionary[data['name']] = [
+                    data['amount'], data['measurement_unit']
+                ]
+            else:
+                dictionary[data['name']][0] += data['amount']
+        fields = ['Ингредиент', 'Единица измерения', 'Количество']
+        my_data = []
+        for key, value in dictionary.items():
+            my_data.append([key, value[1], value[0]])
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = \
+            'attachment; filename="shoppingcart.csv"'
+        writer = csv.writer(response)
+        writer.writerow(fields)
+        writer.writerows(my_data)
+        return response
+
     @action(methods=['get'], detail=True, url_path='get-link')
     def getlink(self, request, pk=None):
         recipe = Recipe.objects.get(pk=pk)
@@ -104,16 +140,16 @@ class CustomUserViewSet(UserViewSet):
 
     @action(methods=['put', 'delete'], detail=False, url_path='me/avatar')
     def avatar(self, request):
-        instance = request.user
+        user = request.user
         if request.method == 'PUT':
-            serializer = AvatarSerializer(data=request.data, instance=instance,
+            serializer = AvatarSerializer(data=request.data, instance=user,
                                           context={'request': request})
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data)
         else:
-            instance.avatar = None
-            instance.save()
+            user.avatar = None
+            user.save()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(methods=['post', 'delete'], detail=True)
