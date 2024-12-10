@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from .models import Ingredient, Favorite, Follow, Recipe, ShoppingCart, Tag
+from .models import (Ingredient, Favorite, Follow, Recipe, ShoppingCart,
+                     Tag, URL)
 
 
 @admin.register(Ingredient)
@@ -58,3 +59,6 @@ class TagAdmin(admin.ModelAdmin):
     search_fields = ('name',)
     list_filter = ('name',)
     list_display_links = ('id', 'name')
+
+
+admin.site.register(URL)

@@ -18,10 +18,12 @@ from django.urls import include, path
 from django.conf.urls.static import static
 
 from foodgram import settings
+from api.views import redirect_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
+    path('s/<str:hash>', redirect_view)
 ]
 
 if settings.DEBUG:

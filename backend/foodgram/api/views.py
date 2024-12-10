@@ -1,8 +1,10 @@
-import short_url
 import csv
+import short_url
+from django.shortcuts import redirect
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import viewsets
@@ -18,7 +20,7 @@ from .serializers import (AvatarSerializer, IngredientSerializer,
                           TagSerializer)
 from recipes.models import (Ingredient, Favorite, Follow,
                             Recipe, RecipeIngredient,
-                            ShoppingCart, Tag)
+                            ShoppingCart, Tag, URL)
 from .permissions import IsAdminIsAuthorOrReadOnly
 from .pagination import UserRecipePagination
 from .filters import IngredientSearchFilter
@@ -112,8 +114,33 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(methods=['get'], detail=True, url_path='get-link')
     def getlink(self, request, pk=None):
-        recipe = Recipe.objects.get(pk=pk)
-        return Response({'short-link': short_url.encode_url(recipe.pk)})
+        try:
+            recipe = Recipe.objects.get(pk=pk)
+            host = request.META['HTTP_HOST']
+            protocol = request.META['wsgi.url_scheme']
+            main_url = '/'.join(request.META['PATH_INFO'].split('/')[1:-2])
+            url = f'{protocol}://{host}/{main_url}'
+            if URL.objects.filter(url=url).exists():
+                hash = URL.objects.get(url=url).hash
+            else:
+                hash = short_url.encode_url(recipe.pk)
+                URL.objects.create(hash=hash, url=url)
+            short = f'{protocol}://{host}/s/{hash}'
+            return Response({'short-link': short})
+        except Recipe.DoesNotExist:
+            return Response('Рецепт не найден',
+                            status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def redirect_view(request, hash):
+    try:
+        url = URL.objects.get(hash=hash)
+        return redirect(url.url)
+    except URL.DoesNotExist:
+        return Response('Данная короткая ссылка не существует',
+                        status=status.HTTP_404_NOT_FOUND)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):

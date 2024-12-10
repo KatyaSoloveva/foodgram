@@ -143,3 +143,21 @@ class ShoppingCart(models.Model):
 
         def __str__(self):
             return f'{self.user} {self.recipe}'
+
+
+class URL(models.Model):
+    hash = models.CharField(max_length=255, unique=True, verbose_name='Хэш')
+    url = models.URLField(verbose_name='URL')
+
+    class Meta:
+        verbose_name = 'Ссылка'
+        verbose_name_plural = 'Ссылки'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['hash', 'url'],
+                name='unique_hash_url'
+            )
+        ]
+
+    def __str__(self):
+        return self.url
