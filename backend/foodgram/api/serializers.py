@@ -279,6 +279,15 @@ class FollowSerializer(serializers.ModelSerializer):
                 'Вы уже подписаны на данного пользователя!')
         return data
 
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        if 'recipes_limit' in self.context['request'].query_params:
+            recipes_count = int(
+                self.context['request'].query_params['recipes_limit']
+            )
+            ret['recipes'] = ret['recipes'][:recipes_count]
+        return ret
+
 
 class FavoriteSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(source='recipe.id')
