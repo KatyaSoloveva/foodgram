@@ -23,7 +23,7 @@ from recipes.models import (Ingredient, Favorite, Follow,
                             ShoppingCart, Tag, URL)
 from .permissions import IsAdminIsAuthorOrReadOnly
 from .pagination import UserRecipePagination
-from .filters import IngredientSearchFilter
+from .filters import IngredientSearchFilter, RecipeFilter
 
 User = get_user_model()
 
@@ -34,7 +34,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminIsAuthorOrReadOnly,)
     pagination_class = UserRecipePagination
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('author', 'tags__slug')
+    filterset_class = RecipeFilter
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
