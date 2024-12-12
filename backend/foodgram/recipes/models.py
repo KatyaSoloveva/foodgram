@@ -1,14 +1,15 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 
+from core.constants import MAX_LENGTH
 
 User = get_user_model()
 
 
 class Tag(models.Model):
-    name = models.CharField(max_length=255,
+    name = models.CharField(max_length=MAX_LENGTH,
                             verbose_name='Название тега')
-    slug = models.SlugField(max_length=255, unique=True,
+    slug = models.SlugField(max_length=MAX_LENGTH, unique=True,
                             verbose_name='URL')
 
     class Meta:
@@ -20,9 +21,9 @@ class Tag(models.Model):
 
 
 class Ingredient(models.Model):
-    name = models.CharField(max_length=255,
+    name = models.CharField(max_length=MAX_LENGTH,
                             verbose_name='Название ингредиента')
-    measurement_unit = models.CharField(max_length=2,
+    measurement_unit = models.CharField(max_length=MAX_LENGTH,
                                         verbose_name='Единица измерения')
 
     class Meta:
@@ -38,7 +39,7 @@ class Recipe(models.Model):
                                verbose_name='Автор рецепта',
                                related_name='recipes',
                                on_delete=models.CASCADE)
-    name = models.CharField(max_length=255,
+    name = models.CharField(max_length=MAX_LENGTH,
                             verbose_name='Название рецепта')
     text = models.TextField(verbose_name='Описание рецепта')
     image = models.ImageField(upload_to='recipes/images/',
@@ -146,7 +147,8 @@ class ShoppingCart(models.Model):
 
 
 class URL(models.Model):
-    hash = models.CharField(max_length=255, unique=True, verbose_name='Хэш')
+    hash = models.CharField(max_length=MAX_LENGTH, unique=True,
+                            verbose_name='Хэш')
     url = models.URLField(verbose_name='URL')
 
     class Meta:

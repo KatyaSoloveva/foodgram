@@ -8,6 +8,7 @@ from djoser.serializers import UserCreateSerializer, UserSerializer
 
 from recipes.models import (Ingredient, Favorite, Follow, Recipe,
                             RecipeIngredient, Tag, ShoppingCart)
+from core.services import validate_count, validate_fields
 
 User = get_user_model()
 
@@ -66,7 +67,7 @@ class UserGETSerializer(UserSerializer):
 
     def get_is_subscribed(self, obj):
         user = self.context['request'].user
-        if not user.is_anonymous:
+        if user.is_authenticated:
             return Follow.objects.filter(
                 following=obj, user=user
             ).exists()
@@ -82,13 +83,11 @@ class AvatarSerializer(serializers.ModelSerializer):
 
 
 class ReadRecipeIngredientSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(
-        source='ingredient.name',
-        read_only=True
+    name = serializers.ReadOnlyField(
+        source='ingredient.name'
     )
-    measurement_unit = serializers.CharField(
-        source='ingredient.measurement_unit',
-        read_only=True
+    measurement_unit = serializers.ReadOnlyField(
+        source='ingredient.measurement_unit'
     )
 
     class Meta:
@@ -105,11 +104,7 @@ class WriteRecipeIngredientSerializer(serializers.ModelSerializer):
         fields = ('id', 'amount')
 
     def validate_amount(self, value):
-        if value < 1:
-            raise serializers.ValidationError(
-                'Количество не должно быть меньше 1!'
-            )
-        return value
+        return validate_count(value, 'Количество')
 
 
 class RecipeGETSerializer(serializers.ModelSerializer):
@@ -203,39 +198,14 @@ class RecipeSerializer(serializers.ModelSerializer):
         return serializer.data
 
     def validate_cooking_time(self, value):
-        if value < 1:
-            raise serializers.ValidationError(
-                'Время готовки не должно быть меньше 1!'
-            )
-        return value
+        return validate_count(value, 'Время готовки')
 
     def validate_ingredients(self, value):
-        if not value:
-            raise serializers.ValidationError(
-                'Нельзя создать рецепт без ингредиентов!'
-            )
-        ingredients = []
-        for current_ingredient in value:
-            ingredients.append(current_ingredient['ingredient']['id'])
-        if len(ingredients) != len(set(ingredients)):
-            raise serializers.ValidationError(
-                'Нельзя добавлять одинаковые ингредиенты!'
-            )
-        return value
+        return validate_fields(value, 'ингредиентов', 'ингредиенты',
+                               'ingredient', 'id')
 
     def validate_tags(self, value):
-        if not value:
-            raise serializers.ValidationError(
-                'Нельзя создать рецепт без тегов!'
-            )
-        tags = []
-        for current_tag in value:
-            tags.append(current_tag)
-        if len(tags) != len(set(tags)):
-            raise serializers.ValidationError(
-                'Нельзя добавлять одинаковые теги!'
-            )
-        return value
+        return validate_fields(value, 'тегов', 'теги')
 
 
 class PartialRecipeSerializer(serializers.ModelSerializer):
@@ -301,8 +271,8 @@ class FavoriteSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         recipe = self.context['recipe']
-        author = self.context['request'].user
-        if Favorite.objects.filter(author=author, recipe=recipe).exists():
+        user = self.context['request'].user
+        if Favorite.objects.filter(author=user, recipe=recipe).exists():
             raise serializers.ValidationError(
                 'Рецепт уже есть в избранном!')
         return data
