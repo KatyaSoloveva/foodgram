@@ -2,6 +2,7 @@ import csv
 import short_url
 from django.shortcuts import redirect
 from django.http import HttpResponse
+from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes
@@ -30,6 +31,8 @@ User = get_user_model()
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
+    """ ViewSet для модели Recipe."""
+
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     permission_classes = (IsAdminIsAuthorOrReadOnly,)
@@ -38,18 +41,27 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filterset_class = RecipeFilter
 
     def get_serializer_class(self):
+        """Функция для выбора сериализатора."""
         if self.action in ('list', 'retrieve'):
             return RecipeGETSerializer
         return RecipeSerializer
 
     @action(methods=['post', 'delete'], detail=True)
     def favorite(self, request, *args, **kwargs):
+        """
+        Предоставляет возможность текущему пользователю добавить рецепт в
+        избранное и удалить рецепт из избранного.
+        """
         recipe = get_object_or_404(Recipe, pk=self.kwargs['pk'])
         return create_delete_object(FavoriteSerializer, request, recipe,
                                     Favorite, 'избранного')
 
     @action(methods=['post', 'delete'], detail=True)
     def shopping_cart(self, request, *args, **kwargs):
+        """
+        Предоставляет возможность текущему пользователю добавить рецепт в
+        список покупок и удалить рецепт из списка покупок.
+        """
         recipe = get_object_or_404(Recipe, pk=self.kwargs['pk'])
         return create_delete_object(ShoppingCartSerializer, request, recipe,
                                     ShoppingCart, 'списка покупок')
@@ -57,6 +69,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(methods=['get'], detail=False,
             permission_classes=(permissions.IsAuthenticated,))
     def download_shopping_cart(self, request):
+        """
+        Предоставляет возможность текущему потзователю скачивать свой список
+        покупок.
+        """
         user = request.user
         ingredients = RecipeIngredient.objects.filter(
             recipe__shoppingcarts__user=user
@@ -88,42 +104,43 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(methods=['get'], detail=True, url_path='get-link')
     def getlink(self, request, pk=None):
-        try:
-            recipe = Recipe.objects.get(pk=pk)
-            host = request.META['HTTP_HOST']
-            protocol = request.META['wsgi.url_scheme']
-            main_url = '/'.join(request.META['PATH_INFO'].split('/')[1:-2])
-            url = f'{protocol}://{host}/{main_url}'
-            if URL.objects.filter(url=url).exists():
-                hash = URL.objects.get(url=url).hash
-            else:
-                hash = short_url.encode_url(recipe.pk)
-                URL.objects.create(hash=hash, url=url)
-            short = f'{protocol}://{host}/s/{hash}'
-            return Response({'short-link': short})
-        except Recipe.DoesNotExist:
-            return Response('Рецепт не найден',
-                            status=status.HTTP_404_NOT_FOUND)
+        """
+        Предоставляет возможность текущему пользователю получить короткую
+        ссылку на выбранный рецепт.
+        """
+        recipe = get_object_or_404(Recipe, pk=self.kwargs['pk'])
+        url = request.headers.get('Referer')
+        if not url:
+            url = request.build_absolute_uri(reverse('recipes-detail',
+                                                     args=(recipe.pk,)))
+        if URL.objects.filter(url=url).exists():
+            hash = URL.objects.get(url=url).hash
+        else:
+            hash = short_url.encode_url(recipe.pk)
+            URL.objects.create(hash=hash, url=url)
+        short = request.build_absolute_uri(reverse('get_url', args=(hash,)))
+        return Response({'short-link': short})
 
 
 @api_view(['GET'])
 @permission_classes([permissions.AllowAny])
 def redirect_view(request, hash):
-    try:
-        url = URL.objects.get(hash=hash)
-        return redirect(url.url)
-    except URL.DoesNotExist:
-        return Response('Данная короткая ссылка не существует',
-                        status=status.HTTP_404_NOT_FOUND)
+    """Редирект с короткой ссылки рецепта на обычную."""
+    obj = get_object_or_404(URL, hash=hash)
+    return redirect(obj.url)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
+    """ ViewSet для модели Tag."""
+
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = (permissions.AllowAny,)
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
+    """ ViewSet для модели Ingredient."""
+
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = (permissions.AllowAny,)
@@ -132,15 +149,22 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class CustomUserViewSet(UserViewSet):
+    """ ViewSet для модели User."""
+
     pagination_class = UserRecipePagination
 
     @action(methods=['get'], detail=False, url_path='me',
             permission_classes=(permissions.IsAuthenticated,))
     def me(self, request, *args, **kwargs):
+        """Получение данных о текущем пользователе."""
         return super().me(request, *args, **kwargs)
 
     @action(methods=['put', 'delete'], detail=False, url_path='me/avatar')
     def avatar(self, request):
+        """
+        Предоставляет возможность текущему пользователю добавить в профиль
+        аватар и удалить его.
+        """
         user = request.user
         if request.method == 'PUT':
             serializer = AvatarSerializer(data=request.data, instance=user,
@@ -155,6 +179,10 @@ class CustomUserViewSet(UserViewSet):
 
     @action(methods=['post', 'delete'], detail=True)
     def subscribe(self, request, *args, **kwargs):
+        """
+        Предоставляет возможность текущему пользователю подписаться
+        на/отписаться от выбранного пользователя.
+        """
         user = request.user
         following = get_object_or_404(User, id=self.kwargs['id'])
         if request.method == 'POST':
@@ -175,6 +203,10 @@ class CustomUserViewSet(UserViewSet):
 
     @action(methods=['get'], detail=False)
     def subscriptions(self, request):
+        """
+        Предоставляет возможность текущему пользователю получить
+        список своих подписок.
+        """
         user = request.user
         followings = Follow.objects.filter(user=user)
         page = self.paginate_queryset(followings)

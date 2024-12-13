@@ -7,4 +7,4 @@ unidecode
 short_url
 gunicorn==20.1.0
 python-dotenv
-
+psycopg2-binary==2.9.3 

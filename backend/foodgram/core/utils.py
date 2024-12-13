@@ -7,6 +7,7 @@ from recipes.models import Ingredient, RecipeIngredient
 
 
 def validate_fields(value, name_1, name_2, key1=None, key2=None):
+    """Вспомогательная функция для валидации полей ingredients и tags."""
     if not value:
         raise serializers.ValidationError(
             f'Нельзя создать рецепт без {name_1}!'
@@ -25,6 +26,7 @@ def validate_fields(value, name_1, name_2, key1=None, key2=None):
 
 
 def validate_count(value, name):
+    """Вспомогательная функция для валидации полей amount и cooking_time."""
     if value < MIN_COUNT:
         raise serializers.ValidationError(
             f'{name} не должно быть меньше {MIN_COUNT}!'
@@ -33,6 +35,7 @@ def validate_count(value, name):
 
 
 def recipe_create_update(ingredients_data, recipe):
+    """Вспомогательная функция для создания/редактирования рецепта."""
     for current_ingredient in ingredients_data:
         ingredient = Ingredient.objects.get(
             name=current_ingredient['ingredient']['id']
@@ -45,6 +48,10 @@ def recipe_create_update(ingredients_data, recipe):
 
 
 def create_delete_object(serializer_name, request, recipe, model, name):
+    """
+    Вспомогательная функция для добавления рецепта в избранное/спискок покупок
+    и удаления рецепта оттуда.
+    """
     user = request.user
     if request.method == 'POST':
         serializer = serializer_name(data=request.data, context={

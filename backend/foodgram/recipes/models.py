@@ -1,7 +1,8 @@
 from django.db import models
+from django.core.validators import MinValueValidator
 from django.contrib.auth import get_user_model
 
-from core.constants import MAX_LENGTH
+from core.constants import MAX_LENGTH, MIN_COUNT
 
 User = get_user_model()
 
@@ -45,7 +46,8 @@ class Recipe(models.Model):
     image = models.ImageField(upload_to='recipes/images/',
                               verbose_name='Картинка')
     cooking_time = models.PositiveSmallIntegerField(
-        verbose_name='Время приготовления'
+        verbose_name='Время приготовления',
+        validators=[MinValueValidator(MIN_COUNT)]
     )
     tags = models.ManyToManyField(Tag, verbose_name='Теги')
     ingredients = models.ManyToManyField(Ingredient,
@@ -70,7 +72,8 @@ class RecipeIngredient(models.Model):
     ingredient = models.ForeignKey(Ingredient, verbose_name='Ингредиент',
                                    on_delete=models.CASCADE,
                                    related_name='recipesingredients')
-    amount = models.IntegerField(verbose_name='Kоличество')
+    amount = models.IntegerField(verbose_name='Kоличество',
+                                 validators=[MinValueValidator(MIN_COUNT)])
 
     class Meta:
         verbose_name = 'Рецепт-Ингредиент'
@@ -162,4 +165,4 @@ class URL(models.Model):
         ]
 
     def __str__(self):
-        return self.url
+        return self.hash

@@ -23,7 +23,7 @@ from api.views import redirect_view
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
-    path('s/<str:hash>', redirect_view)
+    path('s/<str:hash>', redirect_view, name='get_url')
 ]
 
 if settings.DEBUG:
