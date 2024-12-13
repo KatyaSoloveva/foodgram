@@ -24,6 +24,7 @@ from recipes.models import (Ingredient, Favorite, Follow,
 from .permissions import IsAdminIsAuthorOrReadOnly
 from .pagination import UserRecipePagination
 from .filters import IngredientSearchFilter, RecipeFilter
+from core.utils import create_delete_object
 
 User = get_user_model()
 
@@ -44,41 +45,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(methods=['post', 'delete'], detail=True)
     def favorite(self, request, *args, **kwargs):
         recipe = get_object_or_404(Recipe, pk=self.kwargs['pk'])
-        author = request.user
-        if request.method == 'POST':
-            serializer = FavoriteSerializer(
-                data=request.data,
-                context={'request': request, 'recipe': recipe}
-            )
-            serializer.is_valid(raise_exception=True)
-            serializer.save(author=author, recipe=recipe)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            if Favorite.objects.filter(author=author, recipe=recipe).exists():
-                Favorite.objects.get(author=author, recipe=recipe).delete()
-                return Response('Рецепт успешно удален из избранного',
-                                status=status.HTTP_204_NO_CONTENT)
-            return Response('Ошибка удаления из избранного',
-                            status=status.HTTP_400_BAD_REQUEST)
+        return create_delete_object(FavoriteSerializer, request, recipe,
+                                    Favorite, 'избранного')
 
     @action(methods=['post', 'delete'], detail=True)
     def shopping_cart(self, request, *args, **kwargs):
-        user = request.user
         recipe = get_object_or_404(Recipe, pk=self.kwargs['pk'])
-        if request.method == 'POST':
-            serializer = ShoppingCartSerializer(
-                data=request.data,
-                context={'request': request, 'recipe': recipe})
-            serializer.is_valid(raise_exception=True)
-            serializer.save(user=user, recipe=recipe)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
-                ShoppingCart.objects.get(user=user, recipe=recipe).delete()
-                return Response('Рецепт успешно удален из списка покупок',
-                                status=status.HTTP_204_NO_CONTENT)
-            return Response('Ошибка удаления из списка покупок',
-                            status=status.HTTP_400_BAD_REQUEST)
+        return create_delete_object(ShoppingCartSerializer, request, recipe,
+                                    ShoppingCart, 'списка покупок')
 
     @action(methods=['get'], detail=False,
             permission_classes=(permissions.IsAuthenticated,))

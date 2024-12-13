@@ -8,7 +8,7 @@ from djoser.serializers import UserCreateSerializer, UserSerializer
 
 from recipes.models import (Ingredient, Favorite, Follow, Recipe,
                             RecipeIngredient, Tag, ShoppingCart)
-from core.services import validate_count, validate_fields
+from core.utils import validate_count, validate_fields, recipe_create_update
 
 User = get_user_model()
 
@@ -126,7 +126,7 @@ class RecipeGETSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
         if user.is_authenticated:
             return Favorite.objects.filter(
-                author=user, recipe=obj
+                user=user, recipe=obj
             ).exists()
         return False
 
@@ -157,15 +157,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         tags_data = validated_data.pop('tags')
         recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags_data)
-        for current_ingredient in ingredients_data:
-            ingredient = Ingredient.objects.get(
-                name=current_ingredient['ingredient']['id']
-            )
-            RecipeIngredient.objects.create(
-                recipe=recipe,
-                ingredient=ingredient,
-                amount=current_ingredient['amount']
-            )
+        recipe_create_update(ingredients_data, recipe)
         return recipe
 
     def update(self, instance, validated_data):
@@ -174,15 +166,7 @@ class RecipeSerializer(serializers.ModelSerializer):
                 'Нельзя обновить рецепт без поля ingredients!'
             )
         ingredients_data = validated_data.pop('recipesingredients')
-        for current_ingredient in ingredients_data:
-            ingredient = Ingredient.objects.get(
-                name=current_ingredient['ingredient']['id']
-            )
-            RecipeIngredient.objects.update(
-                recipe=instance,
-                ingredient=ingredient,
-                amount=current_ingredient['amount']
-            )
+        recipe_create_update(ingredients_data, instance)
         if 'tags' not in validated_data:
             raise serializers.ValidationError(
                 'Нельзя обновить рецепт без поля tags!'
@@ -272,7 +256,7 @@ class FavoriteSerializer(serializers.ModelSerializer):
     def validate(self, data):
         recipe = self.context['recipe']
         user = self.context['request'].user
-        if Favorite.objects.filter(author=user, recipe=recipe).exists():
+        if Favorite.objects.filter(user=user, recipe=recipe).exists():
             raise serializers.ValidationError(
                 'Рецепт уже есть в избранном!')
         return data

@@ -81,9 +81,9 @@ class RecipeIngredient(models.Model):
 
 
 class Favorite(models.Model):
-    author = models.ForeignKey(User, on_delete=models.CASCADE,
-                               verbose_name='Пользователь',
-                               related_name='favorites')
+    user = models.ForeignKey(User, on_delete=models.CASCADE,
+                             verbose_name='Пользователь',
+                             related_name='favorites')
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE,
                                verbose_name='Избранное',
                                related_name='favorites')
@@ -93,13 +93,13 @@ class Favorite(models.Model):
         verbose_name_plural = 'Избранное'
         constraints = [
             models.UniqueConstraint(
-                fields=['author', 'recipe'],
-                name='unique_author_recipe'
+                fields=['user', 'recipe'],
+                name='unique_recipe_user'
             )
         ]
 
     def __str__(self):
-        return f'{self.author} {self.recipe}'
+        return f'{self.user} {self.recipe}'
 
 
 class Follow(models.Model):

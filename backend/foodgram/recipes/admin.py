@@ -14,10 +14,10 @@ class IngredientAdmin(admin.ModelAdmin):
 
 @admin.register(Favorite)
 class FavoriteAdmin(admin.ModelAdmin):
-    list_display = ('id', 'author', 'recipe')
-    search_fields = ('author', 'recipe')
-    list_filter = ('author',)
-    list_display_links = ('id', 'author')
+    list_display = ('id', 'user', 'recipe')
+    search_fields = ('user', 'recipe')
+    list_filter = ('user',)
+    list_display_links = ('id', 'user')
 
 
 @admin.register(Follow)
