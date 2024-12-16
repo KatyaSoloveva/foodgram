@@ -106,7 +106,9 @@ class ReadRecipeIngredientSerializer(serializers.ModelSerializer):
     данные об ингредиентах.
     Используется в RecipeGETSerializer.
     """
-
+    id = serializers.ReadOnlyField(
+        source='ingredient.id'
+    )
     name = serializers.ReadOnlyField(
         source='ingredient.name'
     )
@@ -207,6 +209,7 @@ class RecipeSerializer(serializers.ModelSerializer):
                 'Нельзя обновить рецепт без поля ingredients!'
             )
         ingredients_data = validated_data.pop('recipesingredients')
+        instance.ingredients.clear()
         recipe_create_update(ingredients_data, instance)
         if 'tags' not in validated_data:
             raise serializers.ValidationError(
@@ -215,7 +218,6 @@ class RecipeSerializer(serializers.ModelSerializer):
         tags_data = validated_data.pop('tags')
         instance.tags.set(tags_data)
 
-        instance.save()
         return super().update(instance, validated_data)
 
     def to_representation(self, instance):
