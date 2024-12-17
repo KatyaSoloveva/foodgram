@@ -8,7 +8,7 @@ from djoser.serializers import UserCreateSerializer, UserSerializer
 
 from recipes.models import (Ingredient, Favorite, Follow, Recipe,
                             RecipeIngredient, Tag, ShoppingCart)
-from core.utils import (validate_count, validate_fields,
+from core.utils import (get_fields, validate_count, validate_fields,
                         validate_shopping_favorite, recipe_create_update)
 
 User = get_user_model()
@@ -162,21 +162,11 @@ class RecipeGETSerializer(serializers.ModelSerializer):
 
     def get_is_favorited(self, obj):
         """Получение значения поля is_favorited."""
-        user = self.context['request'].user
-        if user.is_authenticated:
-            return Favorite.objects.filter(
-                user=user, recipe=obj
-            ).exists()
-        return False
+        return get_fields(self.context, Favorite, obj)
 
     def get_is_in_shopping_cart(self, obj):
         """Получение значения поля is_in_shopping_cart."""
-        user = self.context['request'].user
-        if user.is_authenticated:
-            return ShoppingCart.objects.filter(
-                recipe=obj, user=user
-            ).exists()
-        return False
+        return get_fields(self.context, ShoppingCart, obj)
 
 
 class RecipeSerializer(serializers.ModelSerializer):
@@ -332,8 +322,8 @@ class FavoriteSerializer(ShoppingFavoriteMixin, serializers.ModelSerializer):
         Валидация полей recipe-user. Невозможность повторно добавить рецепт
         в избранное.
         """
-        context = self.context
-        return validate_shopping_favorite(data, context, Favorite, 'избранном')
+        return validate_shopping_favorite(data, self.context, Favorite,
+                                          'избранном')
 
 
 class ShoppingCartSerializer(ShoppingFavoriteMixin,
@@ -349,6 +339,5 @@ class ShoppingCartSerializer(ShoppingFavoriteMixin,
         Валидация полей recipe-user. Невозможность повторно
         добавить рецепт в список покупок.
         """
-        context = self.context
-        return validate_shopping_favorite(data, context, ShoppingCart,
+        return validate_shopping_favorite(data, self.context, ShoppingCart,
                                           'списке покупок')

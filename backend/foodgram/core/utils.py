@@ -61,6 +61,19 @@ def validate_shopping_favorite(data, context, model, name):
     return data
 
 
+def get_fields(context, model, obj):
+    """
+    Вспомогательная функция для получения полей is_in_shopping_cart
+    и is_favorited.
+    """
+    user = context['request'].user
+    if user.is_authenticated:
+        return model.objects.filter(
+            user=user, recipe=obj
+        ).exists()
+    return False
+
+
 def create_delete_object(serializer_name, request, recipe, model, name):
     """
     Вспомогательная функция для добавления рецепта в избранное/спискок покупок
