@@ -31,9 +31,9 @@ class FollowAdmin(admin.ModelAdmin):
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'author')
-    search_fields = ('name', 'author')
+    search_fields = ('name', 'author__username')
     list_filter = ('tags',)
-    list_display_links = ('id', 'name',)
+    list_display_links = ('id', 'name')
     readonly_fields = ('favorite', 'ingredients')
 
     @admin.display(description='Число добавлений рецепта в избранное')
