@@ -131,7 +131,9 @@
     "cooking_time": 1
     }
     ```
-
+* **Адрес сервера, на котором запкщен проект**  
+  IP: 158.160.83.89  
+  Доменное имя: foodgram.servepics.com
 * **Created by Ekaterina Soloveva**  
 https://github.com/KatyaSoloveva
 
