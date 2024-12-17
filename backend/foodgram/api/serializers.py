@@ -8,7 +8,8 @@ from djoser.serializers import UserCreateSerializer, UserSerializer
 
 from recipes.models import (Ingredient, Favorite, Follow, Recipe,
                             RecipeIngredient, Tag, ShoppingCart)
-from core.utils import validate_count, validate_fields, recipe_create_update
+from core.utils import (validate_count, validate_fields,
+                        validate_shopping_favorite, recipe_create_update)
 
 User = get_user_model()
 
@@ -331,12 +332,8 @@ class FavoriteSerializer(ShoppingFavoriteMixin, serializers.ModelSerializer):
         Валидация полей recipe-user. Невозможность повторно добавить рецепт
         в избранное.
         """
-        recipe = self.context['recipe']
-        user = self.context['request'].user
-        if Favorite.objects.filter(user=user, recipe=recipe).exists():
-            raise serializers.ValidationError(
-                'Рецепт уже есть в избранном!')
-        return data
+        context = self.context
+        return validate_shopping_favorite(data, context, Favorite, 'избранном')
 
 
 class ShoppingCartSerializer(ShoppingFavoriteMixin,
@@ -352,10 +349,6 @@ class ShoppingCartSerializer(ShoppingFavoriteMixin,
         Валидация полей recipe-user. Невозможность повторно
         добавить рецепт в список покупок.
         """
-        user = self.context['request'].user
-        recipe = self.context['recipe']
-        if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
-            raise serializers.ValidationError(
-                'Рецепт уже есть в списке покупок!'
-            )
-        return data
+        context = self.context
+        return validate_shopping_favorite(data, context, ShoppingCart,
+                                          'списке покупок')

@@ -47,6 +47,20 @@ def recipe_create_update(ingredients_data, recipe):
         )
 
 
+def validate_shopping_favorite(data, context, model, name):
+    """
+    Вспомогательная функция для валидации добавления в избранное и
+    список покупок.
+    """
+    user = context['request'].user
+    recipe = context['recipe']
+    if model.objects.filter(user=user, recipe=recipe).exists():
+        raise serializers.ValidationError(
+            f'Рецепт уже есть в {name}!'
+        )
+    return data
+
+
 def create_delete_object(serializer_name, request, recipe, model, name):
     """
     Вспомогательная функция для добавления рецепта в избранное/спискок покупок
