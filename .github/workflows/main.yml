@@ -9,6 +9,7 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.8', '3.9', '3.10']
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
     
     steps:
       - name: Check out code
@@ -44,3 +45,36 @@ jobs:
           context: ./backend/
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/foodgram_backend:latest
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: 
+      - build_and_push_to_docker_hub
+    if: github.ref == 'refs/heads/main'
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+    - name: Copy docker-compose.yml via ssh
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USER }}
+        key: ${{ secrets.SSH_KEY }}
+        passphrase: ${{ secrets.SSH_PASSPHRASE }}
+        source: "infra/docker-compose.production.yml"
+        target: "foodgram/infra"
+    - name: Executing remote ssh commands to deploy
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USER }}
+        key: ${{ secrets.SSH_KEY }}
+        passphrase: ${{ secrets.SSH_PASSPHRASE }}
+        script: |
+          cd foodgram/infra
+          sudo docker compose -f docker-compose.production.yml pull ${{ secrets.DOCKER_USERNAME }}/foodgram_backend:latest
+          sudo docker compose -f docker-compose.production.yml down
+          sudo docker compose -f docker-compose.production.yml up -d
+          sudo docker compose -f docker-compose.production.yml exec backend python manage.py migrate
+          sudo docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic --no-input
+          sudo docker compose -f docker-compose.production.yml exec backend python manage.py load_data
