@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.validators import MinValueValidator
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 
 from core.constants import MAX_LENGTH, MIN_COUNT
 
@@ -125,6 +126,10 @@ class Follow(models.Model):
 
     def __str__(self):
         return f'{self.user} {self.following}'
+
+    def clean(self):
+        if self.user == self.following:
+            raise ValidationError('Нельзя подписаться на самого себя')
 
 
 class ShoppingCart(models.Model):
