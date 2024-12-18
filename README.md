@@ -4,6 +4,59 @@
 * **Описание**: Foodgram - сайт, на котором пользователи могут публиковать свои рецепты, добавлять чужие рецепты в избранное и подписываться на публикации других авторов. Зарегистрированным пользователям также доступен сервис «Список покупок». Он позволяет создавать список продуктов, которые нужно купить для приготовления выбранных блюд.
 * **Стек**  
   Django, Django REST Framework, Gunicorn, Nginx, PostgreSQL, Docker
+* **Запуск проекта локально**  
+  Клонируйте репозиторий и перейдите в него в командной строке:
+
+  ```
+  git clone https://github.com/KatyaSoloveva/foodgram.git
+  ```  
+
+  ```
+  cd backend
+  cd foodgram
+  ```
+  Создайте и заполните .env, который должен содержать:
+  ```
+  SQLITE=False (усли хотите подключить бд sqlite)
+  SECRET_KEY='ваш секретный ключ'
+  DJANGO_DEBUG=False (чтобы включить режим дебага)
+  ```
+  Установите зависимости из файла requirements.txt (находясь в директории backend):
+
+  ```
+  pip install -r requirements.txt
+  ```
+  Выполните миграции:
+
+  ```
+  python3 manage.py migrate
+  ```
+  Запуститье проект:
+
+  ```
+  python3 manage.py runserver
+  ```
+  Загрузите данные об ингредиентах:
+
+  ```
+  python3 manage.py load_data
+  ```
+
+* **Запуск проекта локально в контейнерах**   
+   Создайте в рабочей директории и заполните .env , который должен содержать:
+    ```
+    POSTGRES_USER=django_user
+    POSTGRES_PASSWORD=mysecretpassword
+    POSTGRES_DB=django
+    DB_HOST=db
+    DB_PORT=5432
+    SECRET_KEY=django-insecure-nu1&1^eo5-odq#gv^f)%mwzgqwi=#57lh9m9jz53l1*_y)x3dn
+    DJANGO_DEBUG=False (если хотите включить режим отладки)
+    ```
+    В папке infra выполните 
+    ```
+    docker compose up
+    ```
 * **Запуск проекта на сервере**  
     Перейдите в настройки репозитория — Settings, выберете на панели слева Secrets and Variables → Actions, нажммите New repository secret и добавьте следующие значения:
     ```
@@ -33,21 +86,7 @@
     git push
     ```
     После этого будет произведена проверка кода линтерами, сборка и деплой образа foodgram_backend на DockerHub, деплой проекта на удаленный сервер (будут выполнены миграции, собрана статика и загружены данные об ингредиентах). Вам так же придет смс в телеграм об успешном деплое.
-* **Запуск проекта локально в контейнерах**   
-   Создайте в рабочей директории и заполните .env , который должен содержать:
-    ```
-    POSTGRES_USER=django_user
-    POSTGRES_PASSWORD=mysecretpassword
-    POSTGRES_DB=django
-    DB_HOST=db
-    DB_PORT=5432
-    SECRET_KEY=django-insecure-nu1&1^eo5-odq#gv^f)%mwzgqwi=#57lh9m9jz53l1*_y)x3dn
-    DJANGO_DEBUG=False (если хотите включить режим отладки)
-    ```
-    В папке infra выполните 
-    ```
-    docker compose up
-    ```
+
 * **Спецификация API**  
     доступна по адресу http://localhost/api/docs/ 
 
