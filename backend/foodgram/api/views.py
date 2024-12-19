@@ -1,15 +1,13 @@
 import short_url
 from django.db.models import Sum
-from django.shortcuts import redirect
 from django.http import FileResponse
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework import permissions
+from rest_framework.response import Response
 from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
@@ -106,14 +104,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
             URL.objects.create(hash=hash, url=url)
         short = request.build_absolute_uri(reverse('get_url', args=(hash,)))
         return Response({'short-link': short})
-
-
-@api_view(['GET'])
-@permission_classes([permissions.AllowAny])
-def redirect_view(request, hash):
-    """Редирект с короткой ссылки рецепта на обычную."""
-    obj = get_object_or_404(URL, hash=hash)
-    return redirect(obj.url)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):

@@ -21,7 +21,7 @@ def validate_fields(value, name_1, name_2, key1=None, key2=None):
     return value
 
 
-def validate_count(value, name):  # лишняя функция, использовать валидаторы поля
+def validate_count(value, name):
     """Вспомогательная функция для валидации полей amount и cooking_time."""
     if value < MIN_COUNT:
         raise serializers.ValidationError(
@@ -40,7 +40,7 @@ def recipe_create_update(ingredients_data, recipe):
     RecipeIngredient.objects.bulk_create(recipeingredients)
 
 
-def validate_shopping_favorite(data, context, model, name):  # лишняя функция
+def validate_shopping_favorite(data, context, model, name):
     """
     Вспомогательная функция.
 

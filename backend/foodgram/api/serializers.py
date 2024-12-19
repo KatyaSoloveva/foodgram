@@ -8,7 +8,7 @@ from recipes.models import (Ingredient, Favorite, Recipe,
                             RecipeIngredient, Tag, ShoppingCart)
 from users.models import Follow, User
 from core.services import (get_fields, validate_count, validate_fields,
-                        validate_shopping_favorite, recipe_create_update)
+                           validate_shopping_favorite, recipe_create_update)
 
 
 class TagSerializer(serializers.ModelSerializer):
