@@ -49,7 +49,9 @@ def recipe_create_update(ingredients_data, recipe):
 
 def validate_shopping_favorite(data, context, model, name):
     """
-    Вспомогательная функция для валидации добавления в избранное и
+    Вспомогательная функция.
+
+    Валидации добавления в избранное и
     список покупок.
     """
     user = context['request'].user
@@ -63,7 +65,9 @@ def validate_shopping_favorite(data, context, model, name):
 
 def get_fields(context, model, obj):
     """
-    Вспомогательная функция для получения полей is_in_shopping_cart
+    Вспомогательная функция.
+
+    Получения полей is_in_shopping_cart
     и is_favorited.
     """
     user = context['request'].user
@@ -76,7 +80,9 @@ def get_fields(context, model, obj):
 
 def create_delete_object(serializer_name, request, recipe, model, name):
     """
-    Вспомогательная функция для добавления рецепта в избранное/спискок покупок
+    Вспомогательная функция.
+
+    Добавление рецепта в избранное/спискок покупок
     и удаления рецепта оттуда.
     """
     user = request.user

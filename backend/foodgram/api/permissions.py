@@ -2,6 +2,11 @@ from rest_framework import permissions
 
 
 class IsAdminIsAuthorOrReadOnly(permissions.BasePermission):
+    """
+    Kастомный класс-permission.
+
+    Пользователю, не прошедшему проверку, разрешен доступ только на чтение.
+    """
     def has_permission(self, request, view):
         return (
             request.method in permissions.SAFE_METHODS

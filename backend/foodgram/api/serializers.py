@@ -103,10 +103,12 @@ class AvatarSerializer(serializers.ModelSerializer):
 
 class ReadRecipeIngredientSerializer(serializers.ModelSerializer):
     """
-    Вспомогательный сериализатор. Позволяет получить
-    данные об ингредиентах.
+    Вспомогательный сериализатор.
+
+    Позволяет получить данные об ингредиентах.
     Используется в RecipeGETSerializer.
     """
+
     id = serializers.ReadOnlyField(
         source='ingredient.id'
     )
@@ -125,6 +127,7 @@ class ReadRecipeIngredientSerializer(serializers.ModelSerializer):
 class WriteRecipeIngredientSerializer(serializers.ModelSerializer):
     """
     Вспомогательный сериализатор.
+
     Служит для добавления ингредиентов в рецепт.
     Используется в RecipeSerializer.
     """
@@ -213,7 +216,9 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         """
-        Предоставление данных о рецепте при создании/обновлении рецепта
+        Предоставление данных о рецепте.
+
+        При создании/обновлении рецепта данные предоставляются
         в полном виде.
         """
         serializer = RecipeGETSerializer(instance, context=self.context)
@@ -235,10 +240,13 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 class PartialRecipeSerializer(serializers.ModelSerializer):
     """
-    Вспомогательный сериализатор для получения
+    Вспомогательный сериализатор.
+
+    Используется для получения
     частичной информации о рецепте.
     Используется в FollowSerializer.
     """
+
     class Meta:
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
@@ -274,7 +282,9 @@ class FollowSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """
-        Валидация полей user-following. Запрет на повторную подписку на
+        Валидация полей user-following.
+
+        Запрет на повторную подписку на
         одного и того же пользователя и подписку на себя.
         """
         user = self.context['request'].user
@@ -289,6 +299,8 @@ class FollowSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         """
+        Предоставление данных о подписках.
+
         Возможность получать данные о подписках с учетом
         установления параметра recipes_limit.
         """
@@ -319,7 +331,9 @@ class FavoriteSerializer(ShoppingFavoriteMixin, serializers.ModelSerializer):
 
     def validate(self, data):
         """
-        Валидация полей recipe-user. Невозможность повторно добавить рецепт
+        Валидация полей recipe-user.
+
+        Невозможность повторно добавить рецепт
         в избранное.
         """
         return validate_shopping_favorite(data, self.context, Favorite,
@@ -336,7 +350,9 @@ class ShoppingCartSerializer(ShoppingFavoriteMixin,
 
     def validate(self, data):
         """
-        Валидация полей recipe-user. Невозможность повторно
+        Валидация полей recipe-user.
+
+        Невозможность повторно
         добавить рецепт в список покупок.
         """
         return validate_shopping_favorite(data, self.context, ShoppingCart,

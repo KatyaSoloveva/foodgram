@@ -6,11 +6,13 @@ from recipes.models import Tag, Recipe
 
 class IngredientSearchFilter(SearchFilter):
     """Кастомный фильтр для ингредиентов."""
+
     search_param = 'name'
 
 
 class RecipeFilter(filters.FilterSet):
     """Кастомный фильтр для рецептов."""
+
     tags = filters.ModelMultipleChoiceFilter(field_name='tags__slug',
                                              queryset=Tag.objects.all(),
                                              to_field_name='slug')

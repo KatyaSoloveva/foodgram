@@ -49,6 +49,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(methods=['post', 'delete'], detail=True)
     def favorite(self, request, *args, **kwargs):
         """
+        Добавление/удаление рецепта из избранного.
+
         Предоставляет возможность текущему пользователю добавить рецепт в
         избранное и удалить рецепт из избранного.
         """
@@ -59,6 +61,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(methods=['post', 'delete'], detail=True)
     def shopping_cart(self, request, *args, **kwargs):
         """
+        Добавление/удаление рецепта из списка покупок.
+
         Предоставляет возможность текущему пользователю добавить рецепт в
         список покупок и удалить рецепт из списка покупок.
         """
@@ -69,10 +73,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(methods=['get'], detail=False,
             permission_classes=(permissions.IsAuthenticated,))
     def download_shopping_cart(self, request):
-        """
-        Предоставляет возможность текущему потзователю скачивать свой список
-        покупок.
-        """
+        """Скачивание списка покупок текущим пользователем."""
         user = request.user
         ingredients = RecipeIngredient.objects.filter(
             recipe__shoppingcarts__user=user
@@ -105,6 +106,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(methods=['get'], detail=True, url_path='get-link')
     def getlink(self, request, pk=None):
         """
+        Получение короткой ссылки.
+
         Предоставляет возможность текущему пользователю получить короткую
         ссылку на выбранный рецепт.
         """
@@ -162,6 +165,8 @@ class CustomUserViewSet(UserViewSet):
     @action(methods=['put', 'delete'], detail=False, url_path='me/avatar')
     def avatar(self, request):
         """
+        Добавление/удаление аватара.
+
         Предоставляет возможность текущему пользователю добавить в профиль
         аватар и удалить его.
         """
@@ -180,6 +185,8 @@ class CustomUserViewSet(UserViewSet):
     @action(methods=['post', 'delete'], detail=True)
     def subscribe(self, request, *args, **kwargs):
         """
+        Подписка/отписка.
+
         Предоставляет возможность текущему пользователю подписаться
         на/отписаться от выбранного пользователя.
         """
@@ -204,6 +211,8 @@ class CustomUserViewSet(UserViewSet):
     @action(methods=['get'], detail=False)
     def subscriptions(self, request):
         """
+        Список подписок.
+
         Предоставляет возможность текущему пользователю получить
         список своих подписок.
         """
