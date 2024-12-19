@@ -124,7 +124,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     search_fields = ('^name',)
 
 
-class CustomUserViewSet(UserViewSet):
+class UserViewSet(UserViewSet):
     """ ViewSet для модели User."""
 
     pagination_class = UserRecipePagination
@@ -135,51 +135,65 @@ class CustomUserViewSet(UserViewSet):
         """Получение данных о текущем пользователе."""
         return super().me(request, *args, **kwargs)
 
-    @action(methods=('put', 'delete'), detail=False, url_path='me/avatar')
+    @action(methods=('put',), detail=False, url_path='me/avatar')
     def avatar(self, request):
         """
-        Добавление/удаление аватара.
+        Добавление аватара.
 
         Предоставляет возможность текущему пользователю добавить в профиль
-        аватар и удалить его.
+        аватар.
         """
         user = request.user
-        if request.method == 'PUT':
-            serializer = AvatarSerializer(data=request.data, instance=user,
-                                          context={'request': request})
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return Response(serializer.data)
-        else:
-            user.avatar = None
-            user.save()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+        serializer = AvatarSerializer(data=request.data, instance=user,
+                                      context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
-    @action(methods=('post', 'delete'), detail=True)
+    @avatar.mapping.delete
+    def delete_avatar(self, request):
+        """
+        Удаление аватара.
+
+        Предоставляет возможность текущему пользователю удалить
+        аватар из профиля.
+        """
+        request.user.avatar.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(methods=('post',), detail=True)
     def subscribe(self, request, *args, **kwargs):
         """
-        Подписка/отписка.
+        Подписка.
 
         Предоставляет возможность текущему пользователю подписаться
-        на/отписаться от выбранного пользователя.
+        на выбранного пользователя.
         """
         user = request.user
         author = get_object_or_404(User, id=self.kwargs['id'])
-        if request.method == 'POST':
-            serializer = FollowSerializer(
-                data=request.data,
-                context={'request': request, 'author': author}
-            )
-            serializer.is_valid(raise_exception=True)
-            serializer.save(author=author, user=user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            if Follow.objects.filter(author=author, user=user).exists():
-                Follow.objects.get(author=author, user=user).delete()
-                return Response('Успешная отписка',
-                                status=status.HTTP_204_NO_CONTENT)
-            return Response('Ошибка отписки',
-                            status=status.HTTP_400_BAD_REQUEST)
+        serializer = FollowSerializer(
+            data=request.data,
+            context={'request': request, 'author': author})
+        serializer.is_valid(raise_exception=True)
+        serializer.save(author=author, user=user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @subscribe.mapping.delete
+    def delete_subscribe(self, request, *args, **kwargs):
+        """
+        Отписка.
+
+        Предоставляет возможность текущему пользователю
+        отписаться от выбранного пользователя.
+        """
+        user = request.user
+        author = get_object_or_404(User, id=self.kwargs['id'])
+        if (Follow.objects.filter(author=author, user=user).exists()
+                and Follow.objects.get(author=author, user=user).delete()):
+            return Response('Успешная отписка',
+                            status=status.HTTP_204_NO_CONTENT)
+        return Response('Ошибка отписки',
+                        status=status.HTTP_400_BAD_REQUEST)
 
     @action(methods=('get',), detail=False)
     def subscriptions(self, request):
