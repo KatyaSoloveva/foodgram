@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import (Ingredient, Favorite, Follow, Recipe, RecipeIngredient,
+from .models import (Ingredient, Favorite, Recipe, RecipeIngredient,
                      ShoppingCart, Tag, URL)
 
 
@@ -17,14 +17,6 @@ class FavoriteAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'recipe')
     search_fields = ('user', 'recipe')
     list_filter = ('user',)
-    list_display_links = ('id', 'user')
-
-
-@admin.register(Follow)
-class FollowAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'following')
-    search_fields = ('user', 'following')
-    list_filter = ('user', 'following')
     list_display_links = ('id', 'user')
 
 

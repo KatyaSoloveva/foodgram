@@ -4,9 +4,9 @@ from rest_framework import serializers
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_extra_fields.fields import Base64ImageField
 
-from recipes.models import (Ingredient, Favorite, Follow, Recipe,
+from recipes.models import (Ingredient, Favorite, Recipe,
                             RecipeIngredient, Tag, ShoppingCart)
-from users.models import User
+from users.models import Follow, User
 from core.utils import (get_fields, validate_count, validate_fields,
                         validate_shopping_favorite, recipe_create_update)
 
@@ -72,7 +72,7 @@ class UserGETSerializer(UserSerializer):
         user = self.context['request'].user
         if user.is_authenticated:
             return Follow.objects.filter(
-                following=obj, user=user
+                author=obj, user=user
             ).exists()
         return False
 
@@ -249,15 +249,15 @@ class PartialRecipeSerializer(serializers.ModelSerializer):
 class FollowSerializer(serializers.ModelSerializer):
     """Сериализатор для модели Follow."""
 
-    email = serializers.ReadOnlyField(source='following.email')
-    id = serializers.ReadOnlyField(source='following.id')
-    username = serializers.ReadOnlyField(source='following.username')
-    first_name = serializers.ReadOnlyField(source='following.first_name')
-    last_name = serializers.ReadOnlyField(source='following.last_name')
-    avatar = Base64ImageField(source='following.avatar',
+    email = serializers.ReadOnlyField(source='author.email')
+    id = serializers.ReadOnlyField(source='author.id')
+    username = serializers.ReadOnlyField(source='author.username')
+    first_name = serializers.ReadOnlyField(source='author.first_name')
+    last_name = serializers.ReadOnlyField(source='author.last_name')
+    avatar = Base64ImageField(source='author.avatar',
                               read_only=True)
     recipes = PartialRecipeSerializer(many=True, read_only=True,
-                                      source='following.recipes')
+                                      source='author.recipes')
     is_subscribed = serializers.SerializerMethodField(read_only=True)
     recipes_count = serializers.SerializerMethodField(read_only=True)
 
@@ -272,21 +272,21 @@ class FollowSerializer(serializers.ModelSerializer):
 
     def get_recipes_count(self, obj):
         """Получение значения для поля recipes_count."""
-        return obj.following.recipes.count()
+        return obj.author.recipes.count()
 
     def validate(self, data):
         """
-        Валидация полей user-following.
+        Валидация полей user-author.
 
         Запрет на повторную подписку на
         одного и того же пользователя и подписку на себя.
         """
         user = self.context['request'].user
-        following = self.context['following']
-        if user == following:
+        author = self.context['author']
+        if user == author:
             raise serializers.ValidationError(
                 'Нельзя оформить подписку на самого себя!')
-        if Follow.objects.filter(user=user, following=following).exists():
+        if Follow.objects.filter(user=user, author=author).exists():
             raise serializers.ValidationError(
                 'Вы уже подписаны на данного пользователя!')
         return data

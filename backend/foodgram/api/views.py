@@ -1,4 +1,5 @@
 import csv
+
 import short_url
 from django.shortcuts import redirect
 from django.http import HttpResponse
@@ -19,9 +20,10 @@ from .serializers import (AvatarSerializer, IngredientSerializer,
                           RecipeSerializer, ReadRecipeIngredientSerializer,
                           RecipeGETSerializer, ShoppingCartSerializer,
                           TagSerializer)
-from recipes.models import (Ingredient, Favorite, Follow,
+from recipes.models import (Ingredient, Favorite,
                             Recipe, RecipeIngredient,
                             ShoppingCart, Tag, URL)
+from users.models import Follow
 from .permissions import IsAuthorOrReadOnly
 from .pagination import UserRecipePagination
 from .filters import IngredientSearchFilter, RecipeFilter
@@ -191,18 +193,18 @@ class CustomUserViewSet(UserViewSet):
         на/отписаться от выбранного пользователя.
         """
         user = request.user
-        following = get_object_or_404(User, id=self.kwargs['id'])
+        author = get_object_or_404(User, id=self.kwargs['id'])
         if request.method == 'POST':
             serializer = FollowSerializer(
                 data=request.data,
-                context={'request': request, 'following': following}
+                context={'request': request, 'author': author}
             )
             serializer.is_valid(raise_exception=True)
-            serializer.save(following=following, user=user)
+            serializer.save(author=author, user=user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
-            if Follow.objects.filter(following=following, user=user).exists():
-                Follow.objects.get(following=following, user=user).delete()
+            if Follow.objects.filter(author=author, user=user).exists():
+                Follow.objects.get(author=author, user=user).delete()
                 return Response('Успешная отписка',
                                 status=status.HTTP_204_NO_CONTENT)
             return Response('Ошибка отписки',
@@ -217,8 +219,8 @@ class CustomUserViewSet(UserViewSet):
         список своих подписок.
         """
         user = request.user
-        followings = Follow.objects.filter(user=user)
-        page = self.paginate_queryset(followings)
+        authors = Follow.objects.filter(user=user)
+        page = self.paginate_queryset(authors)
         serializer = FollowSerializer(page,
                                       context={'request': request}, many=True)
         return self.get_paginated_response(serializer.data)

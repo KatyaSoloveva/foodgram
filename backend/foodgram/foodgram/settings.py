@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 
@@ -124,13 +125,13 @@ REST_FRAMEWORK = {
 }
 
 DJOSER = {
-    "LOGIN_FIELD": 'email',
-    "SERIALIZERS": {
-        'user_create': 'api.serializers.UserPOSTSerializer',
+    'LOGIN_FIELD': 'email',
+    'SERIALIZERS': {
+        'user_create': 'api.serializers.UserPOSTSerializer',  # лишняя строка, потом убрать
         'user': 'api.serializers.UserGETSerializer',
         'current_user': 'api.serializers.UserGETSerializer',
     },
-    "PERMISSIONS": {
+    'PERMISSIONS': {
         'user': ['api.permissions.IsAuthorOrReadOnly'],
         'user_list': ['rest_framework.permissions.AllowAny'],
     }
