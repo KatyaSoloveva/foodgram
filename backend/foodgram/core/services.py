@@ -1,6 +1,4 @@
 from rest_framework import serializers
-from rest_framework import status
-from rest_framework.response import Response
 
 from .constants import MIN_COUNT
 from recipes.models import RecipeIngredient
@@ -67,30 +65,6 @@ def get_fields(context, model, obj):
     user = request.user
     return (request and user.is_authenticated
             and model.objects.filter(user=user, recipe=obj).exists())
-
-
-def create_delete_object(serializer_name, request, recipe, model, name):
-    """
-    Вспомогательная функция.
-
-    Добавление рецепта в избранное/спискок покупок
-    и удаления рецепта оттуда.
-    """
-    user = request.user
-    if request.method == 'POST':
-        serializer = serializer_name(data=request.data, context={
-            'request': request, 'recipe': recipe}
-        )
-        serializer.is_valid(raise_exception=True)
-        serializer.save(user=user, recipe=recipe)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    else:
-        if model.objects.filter(user=user, recipe=recipe).exists():
-            model.objects.get(user=user, recipe=recipe).delete()
-            return Response(f'Рецепт успешно удален из {name}',
-                            status=status.HTTP_204_NO_CONTENT)
-        return Response(f'Ошибка удаления из {name}',
-                        status=status.HTTP_400_BAD_REQUEST)
 
 
 def get_data(ingredients):

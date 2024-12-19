@@ -1,6 +1,9 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404
+from rest_framework import status
+from rest_framework.response import Response
 
 from core.constants import (LENGTH, LENGTH_MEASUREMENT_UNIT, MAX_LENGTH,
                             MAX_INGREDIENT_LENGTH, MAX_TAG_LENGTH,
@@ -71,6 +74,15 @@ class Recipe(models.Model):
 
     def __str__(self):
         return self.name[:LENGTH]
+
+    @staticmethod
+    def add_favorite_or_cart(serializer, pk, request):
+        recipe = get_object_or_404(Recipe, pk=pk)
+        serializer = serializer(data=request.data,
+                                context={'request': request, 'recipe': recipe})
+        serializer.is_valid(raise_exception=True)
+        serializer.save(user=request.user, recipe=recipe)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class RecipeIngredient(models.Model):

@@ -23,7 +23,7 @@ from users.models import Follow
 from .permissions import IsAuthorOrReadOnly
 from .pagination import UserRecipePagination
 from .filters import IngredientSearchFilter, RecipeFilter
-from core.services import create_delete_object, get_data
+from core.services import get_data
 
 User = get_user_model()
 
@@ -44,7 +44,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return RecipeGETSerializer
         return RecipeSerializer
 
-    @action(methods=('post', 'delete'), detail=True)
+    @action(methods=('post',), detail=True)
     def favorite(self, request, *args, **kwargs):
         """
         Добавление/удаление рецепта из избранного.
@@ -52,21 +52,51 @@ class RecipeViewSet(viewsets.ModelViewSet):
         Предоставляет возможность текущему пользователю добавить рецепт в
         избранное и удалить рецепт из избранного.
         """
-        recipe = get_object_or_404(Recipe, pk=self.kwargs['pk'])
-        return create_delete_object(FavoriteSerializer, request, recipe,
-                                    Favorite, 'избранного')
+        return Recipe.add_favorite_or_cart(FavoriteSerializer,
+                                           self.kwargs['pk'], request)
 
-    @action(methods=('post', 'delete'), detail=True)
+    @favorite.mapping.delete
+    def delete_favorite(self, request, *args, **kwargs):
+        """
+        Удаление рецепта из избранного.
+
+        Предоставляет возможность текущему пользователю
+        удалить рецепт из избранного.
+        """
+        recipe = get_object_or_404(Recipe, pk=self.kwargs['pk'])
+        user = request.user
+        if Favorite.objects.filter(user=user, recipe=recipe).delete()[0] != 0:
+            return Response('Рецепт успешно удален из избранного',
+                            status=status.HTTP_204_NO_CONTENT)
+        return Response('Ошибка удаления из избранного',
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=('post',), detail=True)
     def shopping_cart(self, request, *args, **kwargs):
         """
-        Добавление/удаление рецепта из списка покупок.
+        Добавление рецепта в список покупок.
 
         Предоставляет возможность текущему пользователю добавить рецепт в
-        список покупок и удалить рецепт из списка покупок.
+        список покупок.
+        """
+        return Recipe.add_favorite_or_cart(ShoppingCartSerializer,
+                                           self.kwargs['pk'], request)
+
+    @shopping_cart.mapping.delete
+    def delete_shopping_cart(self, request, *args, **kwargs):
+        """
+        Удаление рецепта из списка покупок.
+
+        Предоставляет возможность текущему пользователю
+        удалить рецепт из списка покупок.
         """
         recipe = get_object_or_404(Recipe, pk=self.kwargs['pk'])
-        return create_delete_object(ShoppingCartSerializer, request, recipe,
-                                    ShoppingCart, 'списка покупок')
+        user = request.user
+        if ShoppingCart.objects.filter(user=user, recipe=recipe).delete()[0] != 0:
+            return Response('Рецепт успешно удален из списка покупок',
+                            status=status.HTTP_204_NO_CONTENT)
+        return Response('Ошибка удаления из списка покупок',
+                        status=status.HTTP_400_BAD_REQUEST)
 
     @action(methods=('get',), detail=False,
             permission_classes=(permissions.IsAuthenticated,))
@@ -188,8 +218,7 @@ class UserViewSet(UserViewSet):
         """
         user = request.user
         author = get_object_or_404(User, id=self.kwargs['id'])
-        if (Follow.objects.filter(author=author, user=user).exists()
-                and Follow.objects.get(author=author, user=user).delete()):
+        if Follow.objects.filter(author=author, user=user).delete()[0] != 0:
             return Response('Успешная отписка',
                             status=status.HTTP_204_NO_CONTENT)
         return Response('Ошибка отписки',
