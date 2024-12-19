@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.response import Response
 
 from .constants import MIN_COUNT
-from recipes.models import Ingredient, RecipeIngredient
+from recipes.models import RecipeIngredient
 
 
 def validate_fields(value, name_1, name_2, key1=None, key2=None):
@@ -63,12 +63,10 @@ def get_fields(context, model, obj):
     Получения полей is_in_shopping_cart
     и is_favorited.
     """
-    user = context['request'].user
-    if user.is_authenticated:
-        return model.objects.filter(
-            user=user, recipe=obj
-        ).exists()
-    return False
+    request = context['request']
+    user = request.user
+    return (request and user.is_authenticated
+            and model.objects.filter(user=user, recipe=obj).exists())
 
 
 def create_delete_object(serializer_name, request, recipe, model, name):
@@ -93,3 +91,11 @@ def create_delete_object(serializer_name, request, recipe, model, name):
                             status=status.HTTP_204_NO_CONTENT)
         return Response(f'Ошибка удаления из {name}',
                         status=status.HTTP_400_BAD_REQUEST)
+
+
+def get_data(ingredients):
+    """Получение данных для занесения в файл со списком покупок."""
+    return [f"{ingredient['ingredient__name']} - "
+            f"{ingredient['amount']} "
+            f"{ingredient['ingredient__measurement_unit']}\n"
+            for ingredient in ingredients]

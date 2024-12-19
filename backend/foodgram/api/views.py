@@ -1,8 +1,7 @@
-import csv
-
 import short_url
+from django.db.models import Sum
 from django.shortcuts import redirect
-from django.http import HttpResponse
+from django.http import FileResponse
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
@@ -17,9 +16,8 @@ from djoser.views import UserViewSet
 
 from .serializers import (AvatarSerializer, IngredientSerializer,
                           FavoriteSerializer, FollowSerializer,
-                          RecipeSerializer, ReadRecipeIngredientSerializer,
-                          RecipeGETSerializer, ShoppingCartSerializer,
-                          TagSerializer)
+                          RecipeSerializer, RecipeGETSerializer,
+                          ShoppingCartSerializer, TagSerializer)
 from recipes.models import (Ingredient, Favorite,
                             Recipe, RecipeIngredient,
                             ShoppingCart, Tag, URL)
@@ -27,7 +25,7 @@ from users.models import Follow
 from .permissions import IsAuthorOrReadOnly
 from .pagination import UserRecipePagination
 from .filters import IngredientSearchFilter, RecipeFilter
-from core.utils import create_delete_object
+from core.services import create_delete_object, get_data
 
 User = get_user_model()
 
@@ -48,7 +46,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return RecipeGETSerializer
         return RecipeSerializer
 
-    @action(methods=['post', 'delete'], detail=True)
+    @action(methods=('post', 'delete'), detail=True)
     def favorite(self, request, *args, **kwargs):
         """
         Добавление/удаление рецепта из избранного.
@@ -60,7 +58,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return create_delete_object(FavoriteSerializer, request, recipe,
                                     Favorite, 'избранного')
 
-    @action(methods=['post', 'delete'], detail=True)
+    @action(methods=('post', 'delete'), detail=True)
     def shopping_cart(self, request, *args, **kwargs):
         """
         Добавление/удаление рецепта из списка покупок.
@@ -72,40 +70,23 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return create_delete_object(ShoppingCartSerializer, request, recipe,
                                     ShoppingCart, 'списка покупок')
 
-    @action(methods=['get'], detail=False,
+    @action(methods=('get',), detail=False,
             permission_classes=(permissions.IsAuthenticated,))
     def download_shopping_cart(self, request):
         """Скачивание списка покупок текущим пользователем."""
         user = request.user
         ingredients = RecipeIngredient.objects.filter(
             recipe__shoppingcarts__user=user
+        ).values('ingredient__name', 'ingredient__measurement_unit').annotate(
+            amount=Sum('amount')).order_by('ingredient__name')
+        my_data = get_data(ingredients)
+        response = FileResponse(my_data, content_type='text/plain')
+        response['Content-Disposition'] = (
+            'attachment; filename="shoppingcart.txt"'
         )
-        serializer = ReadRecipeIngredientSerializer(
-            ingredients,
-            context={'request': request},
-            many=True
-        )
-        dictionary = {}
-        for data in serializer.data:
-            if data['name'] not in dictionary:
-                dictionary[data['name']] = [
-                    data['amount'], data['measurement_unit']
-                ]
-            else:
-                dictionary[data['name']][0] += data['amount']
-        fields = ['Ингредиент', 'Единица измерения', 'Количество']
-        my_data = []
-        for key, value in dictionary.items():
-            my_data.append([key, value[1], value[0]])
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = \
-            'attachment; filename="shoppingcart.csv"'
-        writer = csv.writer(response)
-        writer.writerow(fields)
-        writer.writerows(my_data)
         return response
 
-    @action(methods=['get'], detail=True, url_path='get-link')
+    @action(methods=('get',), detail=True, url_path='get-link')
     def getlink(self, request, pk=None):
         """
         Получение короткой ссылки.
@@ -158,13 +139,13 @@ class CustomUserViewSet(UserViewSet):
 
     pagination_class = UserRecipePagination
 
-    @action(methods=['get'], detail=False, url_path='me',
+    @action(methods=('get',), detail=False, url_path='me',
             permission_classes=(permissions.IsAuthenticated,))
     def me(self, request, *args, **kwargs):
         """Получение данных о текущем пользователе."""
         return super().me(request, *args, **kwargs)
 
-    @action(methods=['put', 'delete'], detail=False, url_path='me/avatar')
+    @action(methods=('put', 'delete'), detail=False, url_path='me/avatar')
     def avatar(self, request):
         """
         Добавление/удаление аватара.
@@ -184,7 +165,7 @@ class CustomUserViewSet(UserViewSet):
             user.save()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(methods=['post', 'delete'], detail=True)
+    @action(methods=('post', 'delete'), detail=True)
     def subscribe(self, request, *args, **kwargs):
         """
         Подписка/отписка.
@@ -210,7 +191,7 @@ class CustomUserViewSet(UserViewSet):
             return Response('Ошибка отписки',
                             status=status.HTTP_400_BAD_REQUEST)
 
-    @action(methods=['get'], detail=False)
+    @action(methods=('get',), detail=False)
     def subscriptions(self, request):
         """
         Список подписок.

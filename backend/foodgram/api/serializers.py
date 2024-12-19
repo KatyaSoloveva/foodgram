@@ -7,7 +7,7 @@ from drf_extra_fields.fields import Base64ImageField
 from recipes.models import (Ingredient, Favorite, Recipe,
                             RecipeIngredient, Tag, ShoppingCart)
 from users.models import Follow, User
-from core.utils import (get_fields, validate_count, validate_fields,
+from core.services import (get_fields, validate_count, validate_fields,
                         validate_shopping_favorite, recipe_create_update)
 
 
@@ -68,12 +68,10 @@ class UserGETSerializer(UserSerializer):
 
     def get_is_subscribed(self, obj):
         """Получение значения для поля is_subscribed."""
-        user = self.context['request'].user
-        if user.is_authenticated:
-            return Follow.objects.filter(
-                author=obj, user=user
-            ).exists()
-        return False
+        request = self.context['request']
+        user = request.user
+        return (request and user.is_authenticated
+                and user.followings.filter(author=obj).exists())
 
 
 class AvatarSerializer(serializers.ModelSerializer):
