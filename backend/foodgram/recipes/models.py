@@ -97,7 +97,7 @@ class RecipeIngredient(models.Model):
         ]
 
     def __str__(self):
-        return f'{self.recipe}[:LENGTH] - {self.ingredient}[:LENGTH]'
+        return f'{self.recipe} - {self.ingredient}'
 
 
 class FavoriteShopping(models.Model):
@@ -117,7 +117,7 @@ class FavoriteShopping(models.Model):
 
     def __str__(self):
         return (f'{self._meta.verbose_name}: {self.user} - '
-                f'{self.recipe}[:LENGTH]')
+                f'{self.recipe}')
 
 
 class Favorite(FavoriteShopping):
@@ -152,4 +152,4 @@ class URL(models.Model):
         ]
 
     def __str__(self):
-        return self.hash
+        return self.hash[:LENGTH]
