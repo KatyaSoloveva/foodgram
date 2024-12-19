@@ -55,8 +55,7 @@ class UserPOSTSerializer(UserCreateSerializer):
 
 class UserGETSerializer(UserSerializer):
     """
-    Сериализатор для получения информации о пользователях.
-    Используется в RecipeGETSerializer.
+    Сериализатор для модели пользователя.
     """
 
     avatar = Base64ImageField(read_only=True)
@@ -207,8 +206,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         При создании/обновлении рецепта данные предоставляются
         в полном виде.
         """
-        serializer = RecipeGETSerializer(instance, context=self.context)
-        return serializer.data
+        return RecipeGETSerializer(instance, context=self.context).data
 
     def validate_cooking_time(self, value):
         """Валидация поля cooking_time."""

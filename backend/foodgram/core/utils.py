@@ -12,12 +12,8 @@ def validate_fields(value, name_1, name_2, key1=None, key2=None):
         raise serializers.ValidationError(
             f'Нельзя создать рецепт без {name_1}!'
         )
-    field = []
-    for current_value in value:
-        if key1 and key2:
-            field.append(current_value[key1][key2])
-        else:
-            field.append(current_value)
+    field = [current_value[key1][key2] if key1 and key2 else current_value for
+             current_value in value]
     if len(field) != len(set(field)):
         raise serializers.ValidationError(
             f'Нельзя добавлять одинаковые {name_2}!'
