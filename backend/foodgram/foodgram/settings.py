@@ -2,17 +2,16 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+load_dotenv(override=True)
 
 SECRET_KEY = os.getenv('SECRET_KEY', '123')
 
 DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'False'
 
 ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost 127.0.0.1').split(' ')
-
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -111,7 +110,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 MEDIA_URL = '/media/'
 
-AUTH_USER_MODEL = 'users.CustomUser'
+AUTH_USER_MODEL = 'users.User'
 
 
 REST_FRAMEWORK = {
@@ -132,7 +131,7 @@ DJOSER = {
         'current_user': 'api.serializers.UserGETSerializer',
     },
     "PERMISSIONS": {
-        'user': ['api.permissions.IsAdminIsAuthorOrReadOnly'],
+        'user': ['api.permissions.IsAuthorOrReadOnly'],
         'user_list': ['rest_framework.permissions.AllowAny'],
     }
 }

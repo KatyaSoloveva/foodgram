@@ -22,7 +22,7 @@ from .serializers import (AvatarSerializer, IngredientSerializer,
 from recipes.models import (Ingredient, Favorite, Follow,
                             Recipe, RecipeIngredient,
                             ShoppingCart, Tag, URL)
-from .permissions import IsAdminIsAuthorOrReadOnly
+from .permissions import IsAuthorOrReadOnly
 from .pagination import UserRecipePagination
 from .filters import IngredientSearchFilter, RecipeFilter
 from core.utils import create_delete_object
@@ -35,7 +35,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
-    permission_classes = (IsAdminIsAuthorOrReadOnly,)
+    permission_classes = (IsAuthorOrReadOnly,)
     pagination_class = UserRecipePagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter

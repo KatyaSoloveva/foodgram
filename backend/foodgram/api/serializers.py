@@ -1,28 +1,15 @@
-import base64
 import re
 
 from django.contrib.auth import get_user_model
-from django.core.files.base import ContentFile
 from rest_framework import serializers
 from djoser.serializers import UserCreateSerializer, UserSerializer
+from drf_extra_fields.fields import Base64ImageField
 
 from recipes.models import (Ingredient, Favorite, Follow, Recipe,
                             RecipeIngredient, Tag, ShoppingCart)
+from users.models import User
 from core.utils import (get_fields, validate_count, validate_fields,
                         validate_shopping_favorite, recipe_create_update)
-
-User = get_user_model()
-
-
-class Base64ImageField(serializers.ImageField):
-    """Кастомный тип поля для картинки."""
-
-    def to_internal_value(self, data):
-        if isinstance(data, str) and data.startswith('data:image'):
-            format, imgstr = data.split(';base64,')
-            ext = format.split('/')[-1]
-            data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
-        return super().to_internal_value(data)
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -236,6 +223,14 @@ class RecipeSerializer(serializers.ModelSerializer):
     def validate_tags(self, value):
         """Валидация поля tags."""
         return validate_fields(value, 'тегов', 'теги')
+
+    def validate_image(self, value):
+        "Валидация поля image."
+        if not value:
+            raise serializers.ValidationError(
+                'Нельзя создать рецепт без изображения.'
+            )
+        return value
 
 
 class PartialRecipeSerializer(serializers.ModelSerializer):
