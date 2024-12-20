@@ -7,7 +7,7 @@ from .models import URL
 
 @api_view(['GET'])
 @permission_classes([permissions.AllowAny])
-def redirect_view(request, hash):
+def redirect_view(request, slug):
     """Редирект с короткой ссылки рецепта на обычную."""
-    obj = get_object_or_404(URL, hash=hash)
+    obj = get_object_or_404(URL, hash=slug)
     return redirect(obj.url)

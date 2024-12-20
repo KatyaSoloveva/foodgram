@@ -149,7 +149,7 @@ class ShoppingCart(FavoriteShopping):
 
 
 class URL(models.Model):
-    hash = models.CharField(max_length=MAX_LENGTH, unique=True,
+    hash = models.SlugField(max_length=MAX_LENGTH, unique=True,
                             verbose_name='Хэш')
     url = models.URLField(verbose_name='URL')
 
