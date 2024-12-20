@@ -127,9 +127,8 @@ REST_FRAMEWORK = {
 DJOSER = {
     'LOGIN_FIELD': 'email',
     'SERIALIZERS': {
-        'user_create': 'api.serializers.UserPOSTSerializer',  # лишняя строка, потом убрать
-        'user': 'api.serializers.UserGETSerializer',
-        'current_user': 'api.serializers.UserGETSerializer',
+        'user': 'api.serializers.UserSerializer',
+        'current_user': 'api.serializers.UserSerializer',
     },
     'PERMISSIONS': {
         'user': ['api.permissions.IsAuthorOrReadOnly'],

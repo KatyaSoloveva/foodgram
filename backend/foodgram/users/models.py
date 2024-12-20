@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 
 from core.constants import EMAIL_LENGTH, USER_FIELDS_LENGTH
+from core.validators import validate_username
 
 
 class User(AbstractUser):
@@ -10,7 +11,8 @@ class User(AbstractUser):
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
 
     username = models.CharField(max_length=USER_FIELDS_LENGTH, unique=True,
-                                verbose_name='Логин')
+                                verbose_name='Логин',
+                                validators=(validate_username,))
     first_name = models.CharField(max_length=USER_FIELDS_LENGTH,
                                   verbose_name='Имя')
     last_name = models.CharField(max_length=USER_FIELDS_LENGTH,

@@ -1,14 +1,12 @@
-import re
-
 from rest_framework import serializers
-from djoser.serializers import UserCreateSerializer, UserSerializer
+from djoser.serializers import UserSerializer
 from drf_extra_fields.fields import Base64ImageField
 
 from recipes.models import (Ingredient, Favorite, Recipe,
                             RecipeIngredient, Tag, ShoppingCart)
 from users.models import Follow, User
-from core.services import (get_fields, validate_count, validate_fields,
-                           validate_shopping_favorite, recipe_create_update)
+from core.services import get_fields, recipe_create_update
+from core.validators import validate_fields, validate_shopping_favorite
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -27,33 +25,7 @@ class IngredientSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class UserPOSTSerializer(UserCreateSerializer):
-    """Сериализатор для создания пользователя."""
-
-    class Meta:
-        model = User
-        fields = ('email', 'id', 'username', 'first_name', 'last_name',
-                  'password')
-
-    def validate_username(self, value):
-        """Валидация поля username."""
-        pattern = re.compile(r'^[\w.@+-]+$')
-        if not pattern.match(value):
-            raise serializers.ValidationError(
-                'Поле username содержит недопустимые символы'
-            )
-        return value
-
-    def validate_email(self, value):
-        """Валидация поля email."""
-        if User.objects.filter(email=value):
-            raise serializers.ValidationError(
-                'Пользователь с таким emil уже существует'
-            )
-        return value
-
-
-class UserGETSerializer(UserSerializer):
+class UserSerializer(UserSerializer):
     """
     Сериализатор для модели пользователя.
     """
@@ -122,17 +94,13 @@ class WriteRecipeIngredientSerializer(serializers.ModelSerializer):
         model = RecipeIngredient
         fields = ('id', 'amount')
 
-    def validate_amount(self, value):
-        """Валидация поля amount."""
-        return validate_count(value, 'Количество')
-
 
 class RecipeGETSerializer(serializers.ModelSerializer):
     """
     Сериализатор для получения информации о рецептах.
     """
 
-    author = UserGETSerializer(read_only=True)
+    author = UserSerializer(read_only=True)
     ingredients = ReadRecipeIngredientSerializer(source='recipesingredients',
                                                  many=True, read_only=True)
     tags = TagSerializer(many=True, read_only=True)
@@ -206,10 +174,6 @@ class RecipeSerializer(serializers.ModelSerializer):
         """
         return RecipeGETSerializer(instance, context=self.context).data
 
-    def validate_cooking_time(self, value):
-        """Валидация поля cooking_time."""
-        return validate_count(value, 'Время готовки')
-
     def validate_ingredients(self, value):
         """Валидация поля ingredients."""
         return validate_fields(value, 'ингредиентов', 'ингредиенты',
@@ -242,8 +206,8 @@ class PartialRecipeSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'image', 'cooking_time')
 
 
-class FollowSerializer(serializers.ModelSerializer):
-    """Сериализатор для модели Follow."""
+class FollowWriteSerializer(serializers.ModelSerializer):
+    """Сериализатор для создания подписки."""
 
     email = serializers.ReadOnlyField(source='author.email')
     id = serializers.ReadOnlyField(source='author.id')
@@ -254,21 +218,14 @@ class FollowSerializer(serializers.ModelSerializer):
                               read_only=True)
     recipes = PartialRecipeSerializer(many=True, read_only=True,
                                       source='author.recipes')
-    is_subscribed = serializers.SerializerMethodField(read_only=True)
-    recipes_count = serializers.SerializerMethodField(read_only=True)
+    is_subscribed = serializers.BooleanField(default=True, read_only=True)
+    recipes_count = serializers.IntegerField(read_only=True,
+                                             source='author.recipes_count')
 
     class Meta:
         model = Follow
         fields = ('email', 'id', 'username', 'first_name', 'last_name',
                   'is_subscribed', 'recipes', 'recipes_count', 'avatar')
-
-    def get_is_subscribed(self, obj):
-        """Получение значения для поля is_subscribed."""
-        return True
-
-    def get_recipes_count(self, obj):
-        """Получение значения для поля recipes_count."""
-        return obj.author.recipes.count()
 
     def validate(self, data):
         """
@@ -289,8 +246,6 @@ class FollowSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         """
-        Предоставление данных о подписках.
-
         Возможность получать данные о подписках с учетом
         установления параметра recipes_limit.
         """
@@ -301,6 +256,33 @@ class FollowSerializer(serializers.ModelSerializer):
             )
             ret['recipes'] = ret['recipes'][:recipes_count]
         return ret
+
+
+class FollowReadSerializer(serializers.ModelSerializer):
+    """Сериализатор для получения информации о подписках."""
+    is_subscribed = serializers.BooleanField(default=True)
+    recipes = serializers.SerializerMethodField()
+    recipes_count = serializers.IntegerField()
+
+    class Meta:
+        model = User
+        fields = ('email', 'id', 'username', 'first_name', 'last_name',
+                  'is_subscribed', 'recipes', 'recipes_count', 'avatar')
+
+    def get_recipes(self, obj):
+        "Получение рецептов автора."
+        recipes = obj.recipes.all()
+        request = self.context['request']
+        if 'recipes_limit' in request.query_params:
+            recipes_limit = int(
+                request.query_params['recipes_limit']
+            )
+            recipes = obj.recipes.all()[:recipes_limit]
+        return PartialRecipeSerializer(
+            recipes,
+            many=True,
+            context=self.context
+        ).data
 
 
 class ShoppingFavoriteMixin(serializers.ModelSerializer):

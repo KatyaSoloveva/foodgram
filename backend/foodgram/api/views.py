@@ -1,5 +1,5 @@
 import short_url
-from django.db.models import Sum
+from django.db.models import Sum, Count
 from django.http import FileResponse
 from django.urls import reverse
 from django.contrib.auth import get_user_model
@@ -13,7 +13,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
 
 from .serializers import (AvatarSerializer, IngredientSerializer,
-                          FavoriteSerializer, FollowSerializer,
+                          FavoriteSerializer, FollowWriteSerializer,
+                          FollowReadSerializer,
                           RecipeSerializer, RecipeGETSerializer,
                           ShoppingCartSerializer, TagSerializer)
 from recipes.models import (Ingredient, Favorite,
@@ -31,12 +32,15 @@ User = get_user_model()
 class RecipeViewSet(viewsets.ModelViewSet):
     """ ViewSet для модели Recipe."""
 
-    queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     permission_classes = (IsAuthorOrReadOnly,)
     pagination_class = UserRecipePagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
+
+    def get_queryset(self):
+        return Recipe.objects.select_related('author').prefetch_related(
+            'ingredients', 'tags')
 
     def get_serializer_class(self):
         """Функция для выбора сериализатора."""
@@ -92,7 +96,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         """
         recipe = get_object_or_404(Recipe, pk=self.kwargs['pk'])
         user = request.user
-        if ShoppingCart.objects.filter(user=user, recipe=recipe).delete()[0] != 0:
+        if ShoppingCart.objects.filter(user=user,
+                                       recipe=recipe).delete()[0] != 0:
             return Response('Рецепт успешно удален из списка покупок',
                             status=status.HTTP_204_NO_CONTENT)
         return Response('Ошибка удаления из списка покупок',
@@ -200,8 +205,10 @@ class UserViewSet(UserViewSet):
         на выбранного пользователя.
         """
         user = request.user
-        author = get_object_or_404(User, id=self.kwargs['id'])
-        serializer = FollowSerializer(
+        author = get_object_or_404(User.objects.annotate(
+            recipes_count=Count('recipes')
+        ), id=self.kwargs['id'])
+        serializer = FollowWriteSerializer(
             data=request.data,
             context={'request': request, 'author': author})
         serializer.is_valid(raise_exception=True)
@@ -233,8 +240,12 @@ class UserViewSet(UserViewSet):
         список своих подписок.
         """
         user = request.user
-        authors = Follow.objects.filter(user=user)
+        authors = User.objects.filter(followings__user=user).annotate(
+            recipes_count=Count('recipes')
+        )
+        print(authors.values())
         page = self.paginate_queryset(authors)
-        serializer = FollowSerializer(page,
-                                      context={'request': request}, many=True)
+        serializer = FollowReadSerializer(page,
+                                          context={'request': request},
+                                          many=True)
         return self.get_paginated_response(serializer.data)
