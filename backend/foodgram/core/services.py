@@ -1,5 +1,7 @@
 from recipes.models import RecipeIngredient
 
+from .constants import COUNT_TAG_INGREDIENT
+
 
 def recipe_create_update(ingredients_data, recipe):
     """Вспомогательная функция: занесение данных в промежуточную таблицу бд."""
@@ -11,17 +13,15 @@ def recipe_create_update(ingredients_data, recipe):
     RecipeIngredient.objects.bulk_create(recipeingredients)
 
 
-# def get_fields(context, model, obj):
-#     """
-#     Вспомогательная функция.
+def get_values(related_data):
+    """
+    Вспомогательная функция.
 
-#     Получения полей is_in_shopping_cart
-#     и is_favorited.
-#     """
-#     request = context['request']
-#     user = request.user
-#     return (request and user.is_authenticated
-#             and model.objects.filter(user=user, recipe=obj).exists())
+    Получения тегов и ингредиентов для админки рецептов.
+    """
+    return ', '.join(
+        [val.name for val in related_data.all()[:COUNT_TAG_INGREDIENT]]
+    )
 
 
 def get_data(ingredients):

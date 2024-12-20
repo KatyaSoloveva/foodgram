@@ -2,6 +2,9 @@ from django.contrib import admin
 from django.utils.safestring import mark_safe
 from django.contrib.auth.models import Group
 
+from core.constants import MIN_COUNT
+from core.services import get_values
+
 from .models import (Ingredient, Favorite, Recipe, RecipeIngredient,
                      ShoppingCart, Tag, URL)
 
@@ -24,12 +27,13 @@ class FavoriteAdmin(admin.ModelAdmin):
 
 class IngredientInline(admin.TabularInline):
     model = RecipeIngredient
-    min_num = 1
+    min_num = MIN_COUNT
 
 
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'author', 'favorite', 'get_image')
+    list_display = ('id', 'name', 'author', 'favorite', 'get_image',
+                    'get_ingredients', 'get_tags')
     search_fields = ('name', 'author__username')
     list_filter = ('tags',)
     list_display_links = ('id', 'name')
@@ -45,6 +49,14 @@ class RecipeAdmin(admin.ModelAdmin):
     @admin.display(description='Миниатюра картинки')
     def get_image(self, obj):
         return mark_safe(f'<img src={obj.image.url} width="80" height="60">')
+
+    @admin.display(description='Ингредиенты')
+    def get_ingredients(self, obj):
+        return get_values(obj.ingredients)
+
+    @admin.display(description='Теги')
+    def get_tags(self, obj):
+        return get_values(obj.tags)
 
 
 @admin.register(ShoppingCart)

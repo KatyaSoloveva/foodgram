@@ -69,7 +69,7 @@
     TELEGRAM_TO - ID своего телеграм-аккаунта
     TELEGRAM_TOKEN - токен вашего бота
     ```
-    Создайте на сервере и заполните .env (в той же директории, в которой будет находиться файл docker-compose.production.yml), который должен содержать:
+    Создайте на сервере папки foodgram/infra, в последнюю скопируйте файл nginx.conf, создайте и заполните .env (в той же директории будет находиться файл docker-compose.production.yml), который должен содержать:
     ```
     POSTGRES_USER=django_user
     POSTGRES_PASSWORD=mysecretpassword
