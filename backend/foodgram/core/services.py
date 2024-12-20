@@ -11,17 +11,17 @@ def recipe_create_update(ingredients_data, recipe):
     RecipeIngredient.objects.bulk_create(recipeingredients)
 
 
-def get_fields(context, model, obj):
-    """
-    Вспомогательная функция.
+# def get_fields(context, model, obj):
+#     """
+#     Вспомогательная функция.
 
-    Получения полей is_in_shopping_cart
-    и is_favorited.
-    """
-    request = context['request']
-    user = request.user
-    return (request and user.is_authenticated
-            and model.objects.filter(user=user, recipe=obj).exists())
+#     Получения полей is_in_shopping_cart
+#     и is_favorited.
+#     """
+#     request = context['request']
+#     user = request.user
+#     return (request and user.is_authenticated
+#             and model.objects.filter(user=user, recipe=obj).exists())
 
 
 def get_data(ingredients):

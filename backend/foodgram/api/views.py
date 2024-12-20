@@ -1,5 +1,5 @@
 import short_url
-from django.db.models import Sum, Count
+from django.db.models import Sum, Count, Subquery, OuterRef, Exists
 from django.http import FileResponse
 from django.urls import reverse
 from django.contrib.auth import get_user_model
@@ -39,8 +39,18 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filterset_class = RecipeFilter
 
     def get_queryset(self):
-        return Recipe.objects.select_related('author').prefetch_related(
+        user = self.request.user
+        queryset = Recipe.objects.select_related('author').prefetch_related(
             'ingredients', 'tags')
+        if self.action in ('list', 'retrieve') and user.is_authenticated:
+            return queryset.annotate(
+                is_favorited=Exists(Subquery(Favorite.objects.filter(
+                    recipe_id=OuterRef('pk'), user=user))),
+                is_in_shopping_cart=Exists(Subquery(
+                    ShoppingCart.objects.filter(recipe_id=OuterRef('pk'),
+                                                user=user)))
+            )
+        return queryset
 
     def get_serializer_class(self):
         """Функция для выбора сериализатора."""
@@ -243,7 +253,6 @@ class UserViewSet(UserViewSet):
         authors = User.objects.filter(followings__user=user).annotate(
             recipes_count=Count('recipes')
         )
-        print(authors.values())
         page = self.paginate_queryset(authors)
         serializer = FollowReadSerializer(page,
                                           context={'request': request},

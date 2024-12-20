@@ -5,7 +5,7 @@ from drf_extra_fields.fields import Base64ImageField
 from recipes.models import (Ingredient, Favorite, Recipe,
                             RecipeIngredient, Tag, ShoppingCart)
 from users.models import Follow, User
-from core.services import get_fields, recipe_create_update
+from core.services import recipe_create_update
 from core.validators import validate_fields, validate_shopping_favorite
 
 
@@ -105,22 +105,16 @@ class RecipeGETSerializer(serializers.ModelSerializer):
                                                  many=True, read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     image = Base64ImageField(read_only=True)
-    is_favorited = serializers.SerializerMethodField(read_only=True)
-    is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
+    is_favorited = serializers.BooleanField(default=False,
+                                            read_only=True)
+    is_in_shopping_cart = serializers.BooleanField(default=False,
+                                                   read_only=True)
 
     class Meta:
         model = Recipe
         fields = ('id', 'tags', 'author', 'ingredients',
                   'is_favorited', 'is_in_shopping_cart',
                   'name', 'image', 'text', 'cooking_time')
-
-    def get_is_favorited(self, obj):
-        """Получение значения поля is_favorited."""
-        return get_fields(self.context, Favorite, obj)
-
-    def get_is_in_shopping_cart(self, obj):
-        """Получение значения поля is_in_shopping_cart."""
-        return get_fields(self.context, ShoppingCart, obj)
 
 
 class RecipeSerializer(serializers.ModelSerializer):
