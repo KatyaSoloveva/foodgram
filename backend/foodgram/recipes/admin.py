@@ -1,12 +1,11 @@
 from django.contrib import admin
-from django.utils.safestring import mark_safe
 from django.contrib.auth.models import Group
-
-from core.constants import MIN_COUNT
-from core.services import get_values
+from django.utils.safestring import mark_safe
 
 from .models import (Ingredient, Favorite, Recipe, RecipeIngredient,
                      ShoppingCart, Tag, URL)
+from core.constants import MIN_COUNT
+from core.services import get_values
 
 
 @admin.register(Ingredient)

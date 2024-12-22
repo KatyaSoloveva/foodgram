@@ -17,13 +17,13 @@ from .serializers import (AvatarSerializer, IngredientSerializer,
                           FollowReadSerializer,
                           RecipeSerializer, RecipeGETSerializer,
                           ShoppingCartSerializer, TagSerializer)
+from .permissions import IsAuthorOrReadOnly
+from .pagination import UserRecipePagination
+from .filters import IngredientSearchFilter, RecipeFilter
 from recipes.models import (Ingredient, Favorite,
                             Recipe, RecipeIngredient,
                             ShoppingCart, Tag, URL)
 from users.models import Follow
-from .permissions import IsAuthorOrReadOnly
-from .pagination import UserRecipePagination
-from .filters import IngredientSearchFilter, RecipeFilter
 from core.services import get_data
 
 User = get_user_model()
@@ -61,10 +61,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(methods=('post',), detail=True)
     def favorite(self, request, *args, **kwargs):
         """
-        Добавление/удаление рецепта из избранного.
+        Добавление рецепта в избранное.
 
         Предоставляет возможность текущему пользователю добавить рецепт в
-        избранное и удалить рецепт из избранного.
+        избранное.
         """
         return Recipe.add_favorite_or_cart(FavoriteSerializer,
                                            self.kwargs['pk'], request)

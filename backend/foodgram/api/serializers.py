@@ -26,9 +26,7 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(UserSerializer):
-    """
-    Сериализатор для модели пользователя.
-    """
+    """Сериализатор для модели пользователя."""
 
     avatar = Base64ImageField(read_only=True)
     is_subscribed = serializers.SerializerMethodField(read_only=True)
@@ -96,9 +94,7 @@ class WriteRecipeIngredientSerializer(serializers.ModelSerializer):
 
 
 class RecipeGETSerializer(serializers.ModelSerializer):
-    """
-    Сериализатор для получения информации о рецептах.
-    """
+    """Сериализатор для получения информации о рецептах."""
 
     author = UserSerializer(read_only=True)
     ingredients = ReadRecipeIngredientSerializer(source='recipesingredients',
@@ -142,7 +138,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         return recipe
 
     def update(self, instance, validated_data):
-        """Изменение реуепта."""
+        """Изменение рецепта."""
         if 'recipesingredients' not in validated_data:
             raise serializers.ValidationError(
                 'Нельзя обновить рецепт без поля ingredients!'
@@ -192,7 +188,7 @@ class PartialRecipeSerializer(serializers.ModelSerializer):
 
     Используется для получения
     частичной информации о рецепте.
-    Используется в FollowSerializer.
+    Используется в FollowSerializer и ShoppingFavoriteMixin.
     """
 
     class Meta:
@@ -240,6 +236,8 @@ class FollowWriteSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         """
+        Получение данных о подписках.
+
         Возможность получать данные о подписках с учетом
         установления параметра recipes_limit.
         """
@@ -254,6 +252,7 @@ class FollowWriteSerializer(serializers.ModelSerializer):
 
 class FollowReadSerializer(serializers.ModelSerializer):
     """Сериализатор для получения информации о подписках."""
+
     is_subscribed = serializers.BooleanField(default=True)
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.IntegerField()
@@ -299,6 +298,7 @@ class ShoppingFavoriteMixin(serializers.ModelSerializer):
         return data
 
     def to_representation(self, instance):
+        """Предоставление данных о рецептах в избранном/списке покупок."""
         return PartialRecipeSerializer(instance=instance.recipe,
                                        context=self.context).data
 

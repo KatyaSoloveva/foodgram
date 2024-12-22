@@ -7,6 +7,7 @@ class IsAuthorOrReadOnly(permissions.BasePermission):
 
     Пользователю, не прошедшему проверку, разрешен доступ только на чтение.
     """
+
     def has_permission(self, request, view):
         return (
             request.method in permissions.SAFE_METHODS
