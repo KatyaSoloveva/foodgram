@@ -250,7 +250,7 @@ class FollowWriteSerializer(serializers.ModelSerializer):
         return ret
 
 
-class FollowReadSerializer(serializers.ModelSerializer):
+class FollowReadSerializer(UserSerializer):
     """Сериализатор для получения информации о подписках."""
 
     is_subscribed = serializers.BooleanField(default=True)

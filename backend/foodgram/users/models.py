@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 
-from core.constants import EMAIL_LENGTH, USER_FIELDS_LENGTH
+from core.constants import EMAIL_LENGTH, USER_FIELDS_LENGTH, LENGTH
 from core.validators import validate_username
 
 
@@ -28,7 +28,7 @@ class User(AbstractUser):
         ordering = ('username',)
 
     def __str__(self):
-        return self.username
+        return self.username[:LENGTH]
 
 
 class Follow(models.Model):
