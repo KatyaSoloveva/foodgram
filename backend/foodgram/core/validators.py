@@ -27,19 +27,3 @@ def validate_fields(value, name_1, name_2, key1=None, key2=None):
             f'Нельзя добавлять одинаковые {name_2}!'
         )
     return value
-
-
-def validate_shopping_favorite(data, context, model, name):
-    """
-    Вспомогательная функция.
-
-    Валидации добавления в избранное и
-    список покупок.
-    """
-    user = context['request'].user
-    recipe = context['recipe']
-    if model.objects.filter(user=user, recipe=recipe).exists():
-        raise serializers.ValidationError(
-            f'Рецепт уже есть в {name}!'
-        )
-    return data

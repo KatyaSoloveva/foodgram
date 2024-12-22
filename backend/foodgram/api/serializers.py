@@ -6,7 +6,7 @@ from recipes.models import (Ingredient, Favorite, Recipe,
                             RecipeIngredient, Tag, ShoppingCart)
 from users.models import Follow, User
 from core.services import recipe_create_update
-from core.validators import validate_fields, validate_shopping_favorite
+from core.validators import validate_fields
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -280,12 +280,27 @@ class FollowReadSerializer(serializers.ModelSerializer):
 
 
 class ShoppingFavoriteMixin(serializers.ModelSerializer):
-    """Миксин для полей id, name, image. cooking_time."""
+    """Класс-родитель для FavoriteSerializer и ShoppingCartSerializer."""
 
-    id = serializers.ReadOnlyField(source='recipe.id')
-    name = serializers.ReadOnlyField(source='recipe.name')
-    image = Base64ImageField(source='recipe.image', read_only=True)
-    cooking_time = serializers.ReadOnlyField(source='recipe.cooking_time')
+    def validate(self, data):
+        """
+        Валидация полей recipe-user.
+
+        Невозможность повторно добавить рецепт в список
+        покупок или избранное.
+        """
+        user = self.context['request'].user
+        recipe = self.context['recipe']
+        model = self.Meta.model
+        if model.objects.filter(user=user, recipe=recipe).exists():
+            raise serializers.ValidationError(
+                f'Рецепт уже есть в {model._meta.verbose_name}!'
+            )
+        return data
+
+    def to_representation(self, instance):
+        return PartialRecipeSerializer(instance=instance.recipe,
+                                       context=self.context).data
 
 
 class FavoriteSerializer(ShoppingFavoriteMixin, serializers.ModelSerializer):
@@ -293,17 +308,8 @@ class FavoriteSerializer(ShoppingFavoriteMixin, serializers.ModelSerializer):
 
     class Meta:
         model = Favorite
-        fields = ('id', 'name', 'image', 'cooking_time')
-
-    def validate(self, data):
-        """
-        Валидация полей recipe-user.
-
-        Невозможность повторно добавить рецепт
-        в избранное.
-        """
-        return validate_shopping_favorite(data, self.context, Favorite,
-                                          'избранном')
+        fields = '__all__'
+        read_only_fields = ('user', 'recipe')
 
 
 class ShoppingCartSerializer(ShoppingFavoriteMixin,
@@ -312,14 +318,5 @@ class ShoppingCartSerializer(ShoppingFavoriteMixin,
 
     class Meta:
         model = ShoppingCart
-        fields = ('id', 'name', 'image', 'cooking_time')
-
-    def validate(self, data):
-        """
-        Валидация полей recipe-user.
-
-        Невозможность повторно
-        добавить рецепт в список покупок.
-        """
-        return validate_shopping_favorite(data, self.context, ShoppingCart,
-                                          'списке покупок')
+        fields = '__all__'
+        read_only_fields = ('user', 'recipe')
