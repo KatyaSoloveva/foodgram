@@ -2,7 +2,6 @@ import short_url
 from django.db.models import Sum, Count, Subquery, OuterRef, Exists
 from django.http import FileResponse
 from django.urls import reverse
-from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework import viewsets
@@ -23,10 +22,8 @@ from .filters import IngredientSearchFilter, RecipeFilter
 from recipes.models import (Ingredient, Favorite,
                             Recipe, RecipeIngredient,
                             ShoppingCart, Tag, URL)
-from users.models import Follow
-from core.services import get_data
-
-User = get_user_model()
+from users.models import Follow, User
+from core.services import delete_favorite_shopping, get_data
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -78,12 +75,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         удалить рецепт из избранного.
         """
         recipe = get_object_or_404(Recipe, pk=self.kwargs['pk'])
-        user = request.user
-        if Favorite.objects.filter(user=user, recipe=recipe).delete()[0] != 0:
-            return Response('Рецепт успешно удален из избранного',
-                            status=status.HTTP_204_NO_CONTENT)
-        return Response('Ошибка удаления из избранного',
-                        status=status.HTTP_400_BAD_REQUEST)
+        return delete_favorite_shopping(request.user, recipe, Favorite,
+                                        'избранного')
 
     @action(methods=('post',), detail=True)
     def shopping_cart(self, request, *args, **kwargs):
@@ -105,13 +98,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         удалить рецепт из списка покупок.
         """
         recipe = get_object_or_404(Recipe, pk=self.kwargs['pk'])
-        user = request.user
-        if ShoppingCart.objects.filter(user=user,
-                                       recipe=recipe).delete()[0] != 0:
-            return Response('Рецепт успешно удален из списка покупок',
-                            status=status.HTTP_204_NO_CONTENT)
-        return Response('Ошибка удаления из списка покупок',
-                        status=status.HTTP_400_BAD_REQUEST)
+        return delete_favorite_shopping(request.user, recipe, ShoppingCart,
+                                        'списка покупок')
 
     @action(methods=('get',), detail=False,
             permission_classes=(permissions.IsAuthenticated,))

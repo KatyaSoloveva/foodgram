@@ -1,16 +1,13 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from django.contrib.auth import get_user_model
 
-from .models import Follow
-
-User = get_user_model()
+from .models import Follow, User
 
 
 @admin.register(User)
 class UserAdmin(UserAdmin):
     list_display = ('username', 'first_name', 'last_name', 'email',
-                    'is_staff', 'followers', 'followings')
+                    'is_staff', 'recipes', 'followings')
     search_fields = ('username', 'email')
     list_filter = ('is_staff',)
     add_fieldsets = (
@@ -21,9 +18,9 @@ class UserAdmin(UserAdmin):
         }),
     )
 
-    @admin.display(description='Подписки')
-    def followers(self, obj):
-        return obj.followers.count()
+    @admin.display(description='Рецепты')
+    def recipes(self, obj):
+        return obj.recipes.count()
 
     @admin.display(description='Подписчики')
     def followings(self, obj):

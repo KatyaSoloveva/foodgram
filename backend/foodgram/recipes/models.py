@@ -1,6 +1,5 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
-from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.response import Response
@@ -8,8 +7,7 @@ from rest_framework.response import Response
 from core.constants import (LENGTH, LENGTH_MEASUREMENT_UNIT, MAX_LENGTH,
                             MAX_INGREDIENT_LENGTH, MAX_TAG_LENGTH,
                             MAX_AMOUNT_COUNT, MAX_COUNT, MIN_COUNT)
-
-User = get_user_model()
+from users.models import User
 
 
 class Tag(models.Model):

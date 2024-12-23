@@ -31,10 +31,8 @@ class UserSerializer(UserSerializer):
     avatar = Base64ImageField(read_only=True)
     is_subscribed = serializers.SerializerMethodField(read_only=True)
 
-    class Meta:
-        model = User
-        fields = ('email', 'id', 'username', 'first_name', 'last_name',
-                  'is_subscribed', 'avatar')
+    class Meta(UserSerializer.Meta):
+        fields = UserSerializer.Meta.fields + ('is_subscribed', 'avatar')
 
     def get_is_subscribed(self, obj):
         """Получение значения для поля is_subscribed."""
@@ -85,8 +83,7 @@ class WriteRecipeIngredientSerializer(serializers.ModelSerializer):
     Используется в RecipeSerializer.
     """
 
-    id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all(),
-                                            source='ingredient.id')
+    id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
 
     class Meta:
         model = RecipeIngredient
@@ -166,8 +163,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def validate_ingredients(self, value):
         """Валидация поля ingredients."""
-        return validate_fields(value, 'ингредиентов', 'ингредиенты',
-                               'ingredient', 'id')
+        return validate_fields(value, 'ингредиентов', 'ингредиенты', 'id')
 
     def validate_tags(self, value):
         """Валидация поля tags."""
@@ -257,10 +253,8 @@ class FollowReadSerializer(UserSerializer):
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.IntegerField()
 
-    class Meta:
-        model = User
-        fields = ('email', 'id', 'username', 'first_name', 'last_name',
-                  'is_subscribed', 'recipes', 'recipes_count', 'avatar')
+    class Meta(UserSerializer.Meta):
+        fields = UserSerializer.Meta.fields + ('recipes', 'recipes_count')
 
     def get_recipes(self, obj):
         "Получение рецептов автора."
