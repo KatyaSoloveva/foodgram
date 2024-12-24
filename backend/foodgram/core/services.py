@@ -28,9 +28,9 @@ def get_values(related_data):
 
 def get_data(ingredients):
     """Получение данных для занесения в файл со списком покупок."""
-    return [f"{ingredient['ingredient__name']} - "
+    return [f"{ingredient['name']} - "
             f"{ingredient['amount']} "
-            f"{ingredient['ingredient__measurement_unit']}\n"
+            f"{ingredient['measurement_unit']}\n"
             for ingredient in ingredients]
 
 
@@ -40,8 +40,10 @@ def delete_favorite_shopping(user, recipe, model, name):
 
     Удаление рецепта из списка покупок/избранного.
     """
-    if model.objects.filter(user=user, recipe=recipe).delete()[0] != 0:
-        return Response(f'Рецепт успешно удален из {name}',
-                        status=status.HTTP_204_NO_CONTENT)
-    return Response(f'Ошибка удаления из {name}',
-                    status=status.HTTP_400_BAD_REQUEST)
+    delete, _ = model.objects.filter(user=user, recipe=recipe).delete()
+    return Response(
+        f'Рецепт успешно удален из {name}' if delete != 0
+        else f'Ошибка удаления из {name}',
+        status=status.HTTP_204_NO_CONTENT if delete != 0
+        else status.HTTP_400_BAD_REQUEST
+    )

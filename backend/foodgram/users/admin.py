@@ -7,7 +7,7 @@ from .models import Follow, User
 @admin.register(User)
 class UserAdmin(UserAdmin):
     list_display = ('username', 'first_name', 'last_name', 'email',
-                    'is_staff', 'recipes', 'followings')
+                    'is_staff', 'recipes', 'subscriptions_to_author')
     search_fields = ('username', 'email')
     list_filter = ('is_staff',)
     add_fieldsets = (
@@ -23,8 +23,8 @@ class UserAdmin(UserAdmin):
         return obj.recipes.count()
 
     @admin.display(description='Подписчики')
-    def followings(self, obj):
-        return obj.followings.count()
+    def subscriptions_to_author(self, obj):
+        return obj.subscriptions_to_author.count()
 
 
 @admin.register(Follow)

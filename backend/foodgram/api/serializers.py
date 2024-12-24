@@ -7,6 +7,7 @@ from recipes.models import (Ingredient, Favorite, Recipe,
 from users.models import Follow, User
 from core.services import recipe_create_update
 from core.validators import validate_fields
+from core.constants import MIN_COUNT, MAX_COUNT
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -28,8 +29,8 @@ class IngredientSerializer(serializers.ModelSerializer):
 class UserSerializer(UserSerializer):
     """Сериализатор для модели пользователя."""
 
-    avatar = Base64ImageField(read_only=True)
-    is_subscribed = serializers.SerializerMethodField(read_only=True)
+    avatar = Base64ImageField()
+    is_subscribed = serializers.SerializerMethodField()
 
     class Meta(UserSerializer.Meta):
         fields = UserSerializer.Meta.fields + ('is_subscribed', 'avatar')
@@ -39,7 +40,9 @@ class UserSerializer(UserSerializer):
         request = self.context['request']
         user = request.user
         return (request and user.is_authenticated
-                and user.followings.filter(author=obj).exists())
+                and user.user_subscriptions.filter(
+                    author=obj
+                ).exists())
 
 
 class AvatarSerializer(serializers.ModelSerializer):
@@ -84,6 +87,15 @@ class WriteRecipeIngredientSerializer(serializers.ModelSerializer):
     """
 
     id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
+    amount = serializers.IntegerField(
+        min_value=MIN_COUNT,
+        max_value=MAX_COUNT,
+        error_messages={
+            'min_value':
+            f'Значение поля amount не должно быть меньше {MIN_COUNT}',
+            'max_value':
+            f'Значение поля amount не должно быть больше {MAX_COUNT}'}
+    )
 
     class Meta:
         model = RecipeIngredient
@@ -119,6 +131,15 @@ class RecipeSerializer(serializers.ModelSerializer):
     tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(),
                                               many=True)
     image = Base64ImageField()
+    cooking_time = serializers.IntegerField(
+        min_value=MIN_COUNT,
+        max_value=MAX_COUNT,
+        error_messages={
+            'min_value':
+            f'Значение поля cooking_time не должно быть меньше {MIN_COUNT}',
+            'max_value':
+            f'Значение поля cooking_time не должно быть больше {MAX_COUNT}'}
+    )
 
     class Meta:
         model = Recipe
@@ -195,23 +216,10 @@ class PartialRecipeSerializer(serializers.ModelSerializer):
 class FollowWriteSerializer(serializers.ModelSerializer):
     """Сериализатор для создания подписки."""
 
-    email = serializers.ReadOnlyField(source='author.email')
-    id = serializers.ReadOnlyField(source='author.id')
-    username = serializers.ReadOnlyField(source='author.username')
-    first_name = serializers.ReadOnlyField(source='author.first_name')
-    last_name = serializers.ReadOnlyField(source='author.last_name')
-    avatar = Base64ImageField(source='author.avatar',
-                              read_only=True)
-    recipes = PartialRecipeSerializer(many=True, read_only=True,
-                                      source='author.recipes')
-    is_subscribed = serializers.BooleanField(default=True, read_only=True)
-    recipes_count = serializers.IntegerField(read_only=True,
-                                             source='author.recipes_count')
-
     class Meta:
         model = Follow
-        fields = ('email', 'id', 'username', 'first_name', 'last_name',
-                  'is_subscribed', 'recipes', 'recipes_count', 'avatar')
+        fields = '__all__'
+        read_only_fields = ('user', 'author')
 
     def validate(self, data):
         """
@@ -231,27 +239,16 @@ class FollowWriteSerializer(serializers.ModelSerializer):
         return data
 
     def to_representation(self, instance):
-        """
-        Получение данных о подписках.
-
-        Возможность получать данные о подписках с учетом
-        установления параметра recipes_limit.
-        """
-        ret = super().to_representation(instance)
-        if 'recipes_limit' in self.context['request'].query_params:
-            recipes_count = int(
-                self.context['request'].query_params['recipes_limit']
-            )
-            ret['recipes'] = ret['recipes'][:recipes_count]
-        return ret
+        """Получение данных о подписке."""
+        return FollowReadSerializer(instance=instance.author,
+                                    context=self.context).data
 
 
 class FollowReadSerializer(UserSerializer):
     """Сериализатор для получения информации о подписках."""
 
-    is_subscribed = serializers.BooleanField(default=True)
     recipes = serializers.SerializerMethodField()
-    recipes_count = serializers.IntegerField()
+    recipes_count = serializers.IntegerField(default=0)
 
     class Meta(UserSerializer.Meta):
         fields = UserSerializer.Meta.fields + ('recipes', 'recipes_count')
@@ -261,10 +258,15 @@ class FollowReadSerializer(UserSerializer):
         recipes = obj.recipes.all()
         request = self.context['request']
         if 'recipes_limit' in request.query_params:
-            recipes_limit = int(
-                request.query_params['recipes_limit']
-            )
-            recipes = obj.recipes.all()[:recipes_limit]
+            try:
+                recipes_limit = int(
+                    request.query_params['recipes_limit']
+                )
+                recipes = recipes[:recipes_limit]
+            except ValueError:
+                raise serializers.ValidationError(
+                    'Пармаетр recipes_limit не является числом.'
+                )
         return PartialRecipeSerializer(
             recipes,
             many=True,
@@ -272,7 +274,7 @@ class FollowReadSerializer(UserSerializer):
         ).data
 
 
-class ShoppingFavoriteMixin(serializers.ModelSerializer):
+class ShoppingFavoriteSerializer(serializers.ModelSerializer):
     """Класс-родитель для FavoriteSerializer и ShoppingCartSerializer."""
 
     def validate(self, data):
@@ -297,7 +299,7 @@ class ShoppingFavoriteMixin(serializers.ModelSerializer):
                                        context=self.context).data
 
 
-class FavoriteSerializer(ShoppingFavoriteMixin, serializers.ModelSerializer):
+class FavoriteSerializer(ShoppingFavoriteSerializer):
     """Сериализатор для модели Favorite."""
 
     class Meta:
@@ -306,8 +308,7 @@ class FavoriteSerializer(ShoppingFavoriteMixin, serializers.ModelSerializer):
         read_only_fields = ('user', 'recipe')
 
 
-class ShoppingCartSerializer(ShoppingFavoriteMixin,
-                             serializers.ModelSerializer):
+class ShoppingCartSerializer(ShoppingFavoriteSerializer):
     """Сериализатор для модели ShoppingCart."""
 
     class Meta:

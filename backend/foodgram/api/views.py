@@ -1,5 +1,5 @@
 import short_url
-from django.db.models import Sum, Count, Subquery, OuterRef, Exists
+from django.db.models import Sum, Count, F
 from django.http import FileResponse
 from django.urls import reverse
 from django.shortcuts import get_object_or_404
@@ -37,16 +37,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = Recipe.objects.select_related('author').prefetch_related(
-            'ingredients', 'tags')
-        if self.action in ('list', 'retrieve') and user.is_authenticated:
-            return queryset.annotate(
-                is_favorited=Exists(Subquery(Favorite.objects.filter(
-                    recipe_id=OuterRef('pk'), user=user))),
-                is_in_shopping_cart=Exists(Subquery(
-                    ShoppingCart.objects.filter(recipe_id=OuterRef('pk'),
-                                                user=user)))
-            )
+        queryset = Recipe.objects.with_relation()
+        if user.is_authenticated:
+            queryset = Recipe.objects.with_annotation(user)
         return queryset
 
     def get_serializer_class(self):
@@ -54,6 +47,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if self.action in ('list', 'retrieve'):
             return RecipeGETSerializer
         return RecipeSerializer
+
+    @staticmethod
+    def add_favorite_or_cart(serializer, pk, request):
+        recipe = get_object_or_404(Recipe, pk=pk)
+        serializer = serializer(data=request.data,
+                                context={'request': request, 'recipe': recipe})
+        serializer.is_valid(raise_exception=True)
+        serializer.save(user=request.user, recipe=recipe)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(methods=('post',), detail=True)
     def favorite(self, request, *args, **kwargs):
@@ -63,8 +65,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         Предоставляет возможность текущему пользователю добавить рецепт в
         избранное.
         """
-        return Recipe.add_favorite_or_cart(FavoriteSerializer,
-                                           self.kwargs['pk'], request)
+        return self.add_favorite_or_cart(FavoriteSerializer,
+                                         self.kwargs['pk'], request)
 
     @favorite.mapping.delete
     def delete_favorite(self, request, *args, **kwargs):
@@ -86,8 +88,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         Предоставляет возможность текущему пользователю добавить рецепт в
         список покупок.
         """
-        return Recipe.add_favorite_or_cart(ShoppingCartSerializer,
-                                           self.kwargs['pk'], request)
+        return self.add_favorite_or_cart(ShoppingCartSerializer,
+                                         self.kwargs['pk'], request)
 
     @shopping_cart.mapping.delete
     def delete_shopping_cart(self, request, *args, **kwargs):
@@ -108,8 +110,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
         user = request.user
         ingredients = RecipeIngredient.objects.filter(
             recipe__shoppingcarts__user=user
-        ).values('ingredient__name', 'ingredient__measurement_unit').annotate(
-            amount=Sum('amount')).order_by('ingredient__name')
+        ).values(name=F('ingredient__name'),
+                 measurement_unit=F('ingredient__measurement_unit')).annotate(
+                     amount=Sum('amount')).order_by('ingredient__name')
+        print(ingredients)
         my_data = get_data(ingredients)
         response = FileResponse(my_data, content_type='text/plain')
         response['Content-Disposition'] = (
@@ -205,7 +209,7 @@ class UserViewSet(UserViewSet):
         user = request.user
         author = get_object_or_404(User.objects.annotate(
             recipes_count=Count('recipes')
-        ), id=self.kwargs['id'])
+        ).order_by('username'), id=self.kwargs['id'])
         serializer = FollowWriteSerializer(
             data=request.data,
             context={'request': request, 'author': author})
@@ -223,11 +227,12 @@ class UserViewSet(UserViewSet):
         """
         user = request.user
         author = get_object_or_404(User, id=self.kwargs['id'])
-        if Follow.objects.filter(author=author, user=user).delete()[0] != 0:
-            return Response('Успешная отписка',
-                            status=status.HTTP_204_NO_CONTENT)
-        return Response('Ошибка отписки',
-                        status=status.HTTP_400_BAD_REQUEST)
+        delete, _ = Follow.objects.filter(author=author, user=user).delete()
+        return Response(
+            'Успешная отписка' if delete != 0 else 'Ошибка отписки',
+            status=status.HTTP_204_NO_CONTENT if delete != 0
+            else status.HTTP_400_BAD_REQUEST
+        )
 
     @action(methods=('get',), detail=False)
     def subscriptions(self, request):
@@ -238,9 +243,10 @@ class UserViewSet(UserViewSet):
         список своих подписок.
         """
         user = request.user
-        authors = User.objects.filter(followings__user=user).annotate(
-            recipes_count=Count('recipes')
-        )
+        authors = User.objects.filter(
+            subscriptions_to_author__user=user
+        ).annotate(recipes_count=Count('recipes')
+                   ).order_by('username')
         page = self.paginate_queryset(authors)
         serializer = FollowReadSerializer(page,
                                           context={'request': request},

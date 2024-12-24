@@ -8,7 +8,7 @@ from core.validators import validate_username
 
 class User(AbstractUser):
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
+    REQUIRED_FIELDS = ('username', 'first_name', 'last_name')
 
     username = models.CharField(max_length=USER_FIELDS_LENGTH, unique=True,
                                 verbose_name='Логин',
@@ -34,20 +34,20 @@ class User(AbstractUser):
 class Follow(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE,
                              verbose_name='Подписчик',
-                             related_name='followers')
+                             related_name='user_subscriptions')
     author = models.ForeignKey(User, on_delete=models.CASCADE,
                                verbose_name='Aвтор',
-                               related_name='followings')
+                               related_name='subscriptions_to_author')
 
     class Meta:
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
-        constraints = [
+        constraints = (
             models.UniqueConstraint(
-                fields=['user', 'author'],
+                fields=('user', 'author'),
                 name='unique_user_author'
-            )
-        ]
+            ),
+        )
 
     def __str__(self):
         return f'{self.user} - {self.author}'

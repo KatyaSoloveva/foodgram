@@ -12,7 +12,7 @@ class Command(BaseCommand):
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 reader = csv.reader(f)
-                tags = [Tag(name=row[0], slug=row[1]) for row in reader]
+                tags = [Tag(name=name, slug=slug) for name, slug in reader]
                 Tag.objects.bulk_create(
                     tags, ignore_conflicts=True
                 )
