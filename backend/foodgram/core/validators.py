@@ -9,7 +9,7 @@ def validate_username(value):
     pattern = re.compile(r'^[\w.@+-]+$')
     if not pattern.match(value):
         raise ValidationError(
-            'Поле username содержит недопустимые символы'
+            'Поле username содержит недопустимые символы.'
         )
     return value
 

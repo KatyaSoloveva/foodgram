@@ -11,16 +11,19 @@ from users.models import User
 class RecipeManager(models.Manager):
     def with_relation(self):
         return self.select_related('author').prefetch_related(
-            'ingredients', 'tags')
+            'ingredients', 'tags'
+        )
 
     def with_annotation(self, user):
         return self.with_relation().annotate(
             is_favorited=Exists(Subquery(Favorite.objects.filter(
-                recipe_id=OuterRef('pk'), user=user))),
+                recipe_id=OuterRef('pk'), user=user
+            ))),
             is_in_shopping_cart=Exists(Subquery(
                 ShoppingCart.objects.filter(
                     recipe_id=OuterRef('pk'), user=user
-                )))
+                )
+            ))
         ).order_by('-pub_date')
 
 

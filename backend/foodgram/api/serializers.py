@@ -94,7 +94,8 @@ class WriteRecipeIngredientSerializer(serializers.ModelSerializer):
             'min_value':
             f'Значение поля amount не должно быть меньше {MIN_COUNT}',
             'max_value':
-            f'Значение поля amount не должно быть больше {MAX_COUNT}'}
+            f'Значение поля amount не должно быть больше {MAX_COUNT}'
+        }
     )
 
     class Meta:
@@ -138,7 +139,8 @@ class RecipeSerializer(serializers.ModelSerializer):
             'min_value':
             f'Значение поля cooking_time не должно быть меньше {MIN_COUNT}',
             'max_value':
-            f'Значение поля cooking_time не должно быть больше {MAX_COUNT}'}
+            f'Значение поля cooking_time не должно быть больше {MAX_COUNT}'
+        }
     )
 
     class Meta:
@@ -219,7 +221,6 @@ class FollowWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Follow
         fields = '__all__'
-        read_only_fields = ('user', 'author')
 
     def validate(self, data):
         """
@@ -228,14 +229,16 @@ class FollowWriteSerializer(serializers.ModelSerializer):
         Запрет на повторную подписку на
         одного и того же пользователя и подписку на себя.
         """
-        user = self.context['request'].user
-        author = self.context['author']
+        user = data['user']
+        author = data['author']
         if user == author:
             raise serializers.ValidationError(
-                'Нельзя оформить подписку на самого себя!')
+                'Нельзя оформить подписку на самого себя!'
+            )
         if Follow.objects.filter(user=user, author=author).exists():
             raise serializers.ValidationError(
-                'Вы уже подписаны на данного пользователя!')
+                'Вы уже подписаны на данного пользователя!'
+            )
         return data
 
     def to_representation(self, instance):
@@ -284,8 +287,8 @@ class ShoppingFavoriteSerializer(serializers.ModelSerializer):
         Невозможность повторно добавить рецепт в список
         покупок или избранное.
         """
-        user = self.context['request'].user
-        recipe = self.context['recipe']
+        user = data['user']
+        recipe = data['recipe']
         model = self.Meta.model
         if model.objects.filter(user=user, recipe=recipe).exists():
             raise serializers.ValidationError(
@@ -305,7 +308,6 @@ class FavoriteSerializer(ShoppingFavoriteSerializer):
     class Meta:
         model = Favorite
         fields = '__all__'
-        read_only_fields = ('user', 'recipe')
 
 
 class ShoppingCartSerializer(ShoppingFavoriteSerializer):
@@ -314,4 +316,3 @@ class ShoppingCartSerializer(ShoppingFavoriteSerializer):
     class Meta:
         model = ShoppingCart
         fields = '__all__'
-        read_only_fields = ('user', 'recipe')

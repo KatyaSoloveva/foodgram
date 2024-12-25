@@ -51,10 +51,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @staticmethod
     def add_favorite_or_cart(serializer, pk, request):
         recipe = get_object_or_404(Recipe, pk=pk)
-        serializer = serializer(data=request.data,
-                                context={'request': request, 'recipe': recipe})
+        user = request.user
+        serializer = serializer(data={'user': user.id, 'recipe': recipe.id},
+                                context={'request': request})
         serializer.is_valid(raise_exception=True)
-        serializer.save(user=request.user, recipe=recipe)
+        serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(methods=('post',), detail=True)
@@ -110,10 +111,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
         user = request.user
         ingredients = RecipeIngredient.objects.filter(
             recipe__shoppingcarts__user=user
-        ).values(name=F('ingredient__name'),
-                 measurement_unit=F('ingredient__measurement_unit')).annotate(
-                     amount=Sum('amount')).order_by('ingredient__name')
-        print(ingredients)
+        ).values(
+            name=F('ingredient__name'),
+            measurement_unit=F('ingredient__measurement_unit')
+        ).annotate(amount=Sum('amount')).order_by('ingredient__name')
         my_data = get_data(ingredients)
         response = FileResponse(my_data, content_type='text/plain')
         response['Content-Disposition'] = (
@@ -211,10 +212,11 @@ class UserViewSet(UserViewSet):
             recipes_count=Count('recipes')
         ).order_by('username'), id=self.kwargs['id'])
         serializer = FollowWriteSerializer(
-            data=request.data,
-            context={'request': request, 'author': author})
+            data={'user': user.id, 'author': author.id},
+            context={'request': request}
+        )
         serializer.is_valid(raise_exception=True)
-        serializer.save(author=author, user=user)
+        serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @subscribe.mapping.delete
@@ -228,9 +230,10 @@ class UserViewSet(UserViewSet):
         user = request.user
         author = get_object_or_404(User, id=self.kwargs['id'])
         delete, _ = Follow.objects.filter(author=author, user=user).delete()
+        not_deleted = delete != 0
         return Response(
-            'Успешная отписка' if delete != 0 else 'Ошибка отписки',
-            status=status.HTTP_204_NO_CONTENT if delete != 0
+            'Успешная отписка' if not_deleted else 'Ошибка отписки',
+            status=status.HTTP_204_NO_CONTENT if not_deleted
             else status.HTTP_400_BAD_REQUEST
         )
 
@@ -245,8 +248,7 @@ class UserViewSet(UserViewSet):
         user = request.user
         authors = User.objects.filter(
             subscriptions_to_author__user=user
-        ).annotate(recipes_count=Count('recipes')
-                   ).order_by('username')
+        ).annotate(recipes_count=Count('recipes')).order_by('username')
         page = self.paginate_queryset(authors)
         serializer = FollowReadSerializer(page,
                                           context={'request': request},

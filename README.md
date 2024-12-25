@@ -173,7 +173,8 @@
     ```
 * **Адрес сервера, на котором запкщен проект**  
   IP: 158.160.83.89  
-  Доменное имя: foodgram.servepics.com
+  Доменное имя: foodgram.servepics.com  
+  https://foodgram.servepics.com/
 * **Created by Ekaterina Soloveva**  
 https://github.com/KatyaSoloveva
 
