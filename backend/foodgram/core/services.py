@@ -41,10 +41,9 @@ def delete_favorite_shopping(user, recipe, model, name):
     Удаление рецепта из списка покупок/избранного.
     """
     delete, _ = model.objects.filter(user=user, recipe=recipe).delete()
-    not_deleted = delete != 0
     return Response(
-        f'Рецепт успешно удален из {name}' if not_deleted
+        f'Рецепт успешно удален из {name}' if delete
         else f'Ошибка удаления из {name}',
-        status=status.HTTP_204_NO_CONTENT if not_deleted
+        status=status.HTTP_204_NO_CONTENT if delete
         else status.HTTP_400_BAD_REQUEST
     )

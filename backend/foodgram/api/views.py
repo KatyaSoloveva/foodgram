@@ -230,10 +230,9 @@ class UserViewSet(UserViewSet):
         user = request.user
         author = get_object_or_404(User, id=self.kwargs['id'])
         delete, _ = Follow.objects.filter(author=author, user=user).delete()
-        not_deleted = delete != 0
         return Response(
-            'Успешная отписка' if not_deleted else 'Ошибка отписки',
-            status=status.HTTP_204_NO_CONTENT if not_deleted
+            'Успешная отписка' if delete else 'Ошибка отписки',
+            status=status.HTTP_204_NO_CONTENT if delete
             else status.HTTP_400_BAD_REQUEST
         )
 
